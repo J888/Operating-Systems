@@ -164,6 +164,12 @@ int main(int argc, char *argv[])
 	printf("\nPROGRAM TEST:\n");
 	printf("Result of comparison: %d\n\n", comp);
 
+	float ff = 20000.532;
+	for(int k = 0; k <16000000; k++)
+	{
+		
+		ff = ff/1.01;
+	}
 
 
 	return 0;

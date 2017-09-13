@@ -35,7 +35,7 @@ void main()
 		pid_t pid1;
 
 		printf("\nvalue of i: %d\n", i);
-		
+	
 		gettimeofday(&tv, NULL);
 
 		float f = (float)tv.tv_usec/1000000;
