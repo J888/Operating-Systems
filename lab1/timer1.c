@@ -26,12 +26,13 @@ What it does:
 void main()
 {
 	
-	struct timeval tv;
-	pid_t pid1;
+	init_csv_file(1);
 
-	int i  = 0; int trials = 10;
+	int i  = 0; int trials = 100;
 	while(i < trials)
 	{
+		struct timeval tv;
+		pid_t pid1;
 
 		printf("\nvalue of i: %d\n", i);
 		

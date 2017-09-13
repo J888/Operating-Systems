@@ -24,82 +24,88 @@ What it does:
 
 int main()
 {
+
+	init_csv_file(2);
+	init_csv_file(3);
+
+	int i = 0;
+	int trials = 100;
 	
-	struct timeval tv;
-	
-	gettimeofday(&tv, NULL);
-
-	float f = (float)tv.tv_usec/1000000;
-
-	double data = (double)tv.tv_sec + f;
-
-	write_to_csv_elapsed(data, 1, 2);
-
-	pid_t pid1 = fork(); //FIRST FORK
-
-	fflush(NULL);
-
-
-	if(pid1 == -1) 
+	while(i<trials)
 	{
-		perror("error in fork1");
-	}
+		struct timeval tv;
+		
+		gettimeofday(&tv, NULL);
 
-	else if(pid1 == 0) //CHILD1
-	{
+		float f = (float)tv.tv_usec/1000000;
 
+		double data = (double)tv.tv_sec + f;
 
-		char* args[] = {"./prog1", "1", "records2.txt", NULL};
-		execv(args[0], args);
-		exit(0);
+		write_to_csv_elapsed(data, 1, 2);
 
-
-		struct timeval tv2;
-
-		gettimeofday(&tv2, NULL);
-
-		float f2 = (float)tv2.tv_usec/1000000;
-
-		double data2 = (double)tv2.tv_sec + f2;
-
-		write_to_csv_elapsed(data2, 1, 3);
-
-		pid_t pid2 = fork(); //SECOND FORK
+		pid_t pid1 = fork(); //FIRST FORK
 
 		fflush(NULL);
 
-		if(pid2 == -1)
+
+		if(pid1 == -1) 
 		{
-			perror("error in fork2");
+			perror("error in fork1");
+			exit(-1);
 		}
 
-		else if(pid2 ==0) //CHILD2
+		else if(pid1 == 0) //CHILD1
 		{
-			printf("I am child process 2");
-			char* args[] = {"./prog1", "1", "records3.txt", NULL};
+
+			char* args[] = {"./prog1", "2", "records2.txt", NULL};
 			execv(args[0], args);
-			exit(0);
 
 		}
 
-		else if(pid2 > 1) //PARENT2
+		else if(pid1 > 1) //PARENT1
 		{
+
+			struct timeval tv2;
+
+			gettimeofday(&tv2, NULL);
+
+			float f2 = (float)tv2.tv_usec/1000000;
+
+			double data2 = (double)tv2.tv_sec + f2;
+
+			write_to_csv_elapsed(data2, 1, 3);
+
+			pid_t pid2 = fork(); //SECOND FORK
+
+			fflush(NULL);
+
+
+			if(pid2 == -1)
+			{
+				perror("\nerror in fork2\n");
+				exit(-1);
+			}
+
+			else if(pid2 == 0) //CHILD2
+			{
+				//srand(getpid());
+				printf("\nI am child process 2\n");
+				char* args2[] = {"./prog1", "3", "records3.txt", NULL};
+				execv(args2[0], args2);
+			}
+
+			else if(pid2 > 1) //PARENT2
+			{
+				wait(NULL);
+				printf("I am parent process 2. My child has finished. Exiting.");
+
+			}
+
 			wait(NULL);
-			printf("I am parent process 2. My child has finished. Exiting.");
-
-
+			printf("\nI am parent process 1. My child has finished. Exiting\n");		
 		}
 
-
+		i++;
 	}
-
-	else if(pid1 > 1) //PARENT1
-	{
-
-		printf("I am parent process 1. My child has finished. Exiting.");
-		
-	}
-
-
 	return 1;
 }

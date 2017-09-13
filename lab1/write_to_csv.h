@@ -35,7 +35,7 @@ void write_to_csv_elapsed(double data, int x, int fork_num)
 
 }
 
-void init_csv_files(int t)
+void init_csv_file(int t)
 {
 
 	FILE *fp2;

@@ -132,7 +132,8 @@ int main(int argc, char *argv[])
 	write_to_csv_elapsed(data, 2, atoi(argv[1]));
 
 	//random.. only seeded once
-	srand ( time(NULL) );
+	//srand ( time(NULL) );
+	srand(getpid());
 
 	//allocate and fill 2D array of random ints
 	int rows = 10;  int cols = 120;
@@ -162,6 +163,8 @@ int main(int argc, char *argv[])
 	//TESTING
 	printf("\nPROGRAM TEST:\n");
 	printf("Result of comparison: %d\n\n", comp);
+
+
 
 	return 0;
 }
