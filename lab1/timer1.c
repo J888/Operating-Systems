@@ -28,28 +28,22 @@ void main()
 	
 	init_csv_file(1);
 
-	int i  = 0; int trials = 100;
-	while(i < trials)
+	int i  = 0; 
+
+	while(i < 1000) //1000 trials
 	{
 		struct timeval tv;
 		pid_t pid1;
 
-		printf("\nvalue of i: %d\n", i);
-	
-		gettimeofday(&tv, NULL);
+		printf("\nCurrently on trial #%d (timer1)\n", i+1);
+		fflush(NULL);
 
-		float f = (float)tv.tv_usec/1000000;
-
-		double data = (double)tv.tv_sec + f;
-
-		write_to_csv_elapsed(data, 1, 1);
-
-		pid1 = fork(); //FIRST FORK
-
+		gettimeofday(&tv, NULL); //save time
+		pid1 = fork(); //immediate fork
 		fflush(NULL);
 
 
-		if(pid1 == -1) 
+		if(pid1 < 0) 
 		{
 			perror("fork error");
 			exit(-1);
@@ -57,7 +51,6 @@ void main()
 
 		else if (pid1 == 0) //CHILD
 		{
-			printf("\nI am the child process\n");
 			char* args[] = {"./prog1", "1", "records1.txt", NULL};
 			execv(args[0], args);
 			exit(0);
@@ -68,8 +61,14 @@ void main()
 		{
 
 			wait(NULL);
-			printf("\nI am the parent process. My child is done. Exiting now\n");
-			
+			printf("Writing to .csv..");
+
+			float f = (float)tv.tv_usec/1000000;
+
+			double data = (double)tv.tv_sec + f;
+
+			write_to_csv(data, 2, 1);
+			printf("Finished.\n");			
 		}	
 	
 	i++;

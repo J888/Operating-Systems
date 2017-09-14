@@ -26,7 +26,6 @@ int main()
 {
 
 	init_csv_file(2);
-	init_csv_file(3);
 
 	int i = 0;
 	int trials = 100;
@@ -34,21 +33,17 @@ int main()
 	while(i<trials)
 	{
 		struct timeval tv;
-		
-		gettimeofday(&tv, NULL);
+		pid_t pid1;
 
-		float f = (float)tv.tv_usec/1000000;
+		printf("\nCurrently on trial #%d (timer2)\n", i+1);
+		fflush(NULL);
 
-		double data = (double)tv.tv_sec + f;
-
-		write_to_csv_elapsed(data, 1, 2);
-
-		pid_t pid1 = fork(); //FIRST FORK
-
+		gettimeofday(&tv, NULL);//record time
+		pid1 = fork(); //immediate fork
 		fflush(NULL);
 
 
-		if(pid1 == -1) 
+		if(pid1 < 0) 
 		{
 			perror("error in fork1");
 			exit(-1);
@@ -69,14 +64,9 @@ int main()
 
 			gettimeofday(&tv2, NULL);
 
-			float f2 = (float)tv2.tv_usec/1000000;
+			pid_t pid2;
 
-			double data2 = (double)tv2.tv_sec + f2;
-
-			write_to_csv_elapsed(data2, 1, 3);
-
-			pid_t pid2 = fork(); //SECOND FORK
-
+			pid2 = fork(); //SECOND FORK
 			fflush(NULL);
 
 
@@ -88,24 +78,39 @@ int main()
 
 			else if(pid2 == 0) //CHILD2
 			{
-				//srand(getpid());
-				printf("\nI am child process 2\n");
 				char* args2[] = {"./prog1", "3", "records3.txt", NULL};
 				execv(args2[0], args2);
 			}
 
 			else if(pid2 > 1) //PARENT2
 			{
+
 				wait(NULL);
-				printf("I am parent process 2. My child has finished. Exiting.");
+
+				printf("writing to csv..");
+				float f2 = (float)tv2.tv_usec/1000000;
+
+				double data2 = (double)tv2.tv_sec + f2;
+
+				write_to_csv(data2, 2, 3);
+				printf("..finished\n");
 
 			}
 
 			wait(NULL);
-			printf("\nI am parent process 1. My child has finished. Exiting\n");		
+
+			printf("writing to csv..");
+			float f = (float)tv.tv_usec/1000000;
+
+			double data = (double)tv.tv_sec + f;
+
+			write_to_csv(data, 2, 2);
+			printf("..finished\n\n");
+			
 		}
 
 		i++;
 	}
+
 	return 1;
 }

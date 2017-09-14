@@ -1,11 +1,12 @@
-void write_to_csv_elapsed(double data, int x, int fork_num)
+//Writes double data to csv, which csv is dependent on int fork_num. 
+//Formatting dependent on int position 
+void write_to_csv(double data, int position, int fork_num)
 {
 
 	FILE *fp;
 
-	
 	if(fork_num == 1)
-	{
+	{	
 		fp = fopen("fork1_timer1.csv", "a");	
 	}
 
@@ -20,13 +21,13 @@ void write_to_csv_elapsed(double data, int x, int fork_num)
 	}
 
 	//data is first (start) time
-	if(x == 1)
+	if(position == 1)
 	{
 		fprintf(fp, "%f,", data);
 	}
 
 	//data is second (end) time
-	else if(x == 2)
+	else if(position == 2)
 	{
 		fprintf(fp, "%f\n", data);
 	}
@@ -43,18 +44,18 @@ void init_csv_file(int t)
 	if(t == 1) 
 	{
 		fp2 = fopen("fork1_timer1.csv", "a");
-		fprintf(fp2, "START TIME,END TIME\n");
+		fprintf(fp2, "END TIME,START TIME\n");
 		fclose(fp2);
 	}
 
 	else{
 
 		fp2 = fopen("fork1_timer2.csv", "a");
-		fprintf(fp2, "-START TIME-,-END TIME-\n");
+		fprintf(fp2, "-END TIME-,-START TIME-\n");
 		fclose(fp2);
 
-		fp2 = fopen("fork2_timer2.csv", "a");
-		fprintf(fp2, "-START TIME-,-END TIME-\n");
-		fclose(fp2);
+		FILE* fp3 = fopen("fork2_timer2.csv", "a");
+		fprintf(fp3, "-END TIME-,-START TIME-\n");
+		fclose(fp3);
 	}
 }

@@ -92,7 +92,7 @@ int compare(int **a, int r, char *fname)
 
 
 
-void write_to_file(char *fname, int **a)
+void write_record_to_file(char *fname, int **a)
 {
 	FILE *fp = fopen(fname, "w+");
 
@@ -128,12 +128,10 @@ int main(int argc, char *argv[])
 	double data = (double)tv.tv_sec + f;
 
 	// argv[1] specifies correct .csv (depends
-	// on which timer called new process)
-	write_to_csv_elapsed(data, 2, atoi(argv[1]));
+	// on which timer called which process)
+	write_to_csv(data, 1, atoi(argv[1]));
 
-	//random.. only seeded once
-	//srand ( time(NULL) );
-	srand(getpid());
+	srand(getpid()); //seed random based on curr pid
 
 	//allocate and fill 2D array of random ints
 	int rows = 10;  int cols = 120;
@@ -147,25 +145,16 @@ int main(int argc, char *argv[])
 
 	fill_array(s_arr);
 
-	printf("\narg 1 is %s\n", argv[1]);
-	printf("\narg 2 is %s\n", argv[2]);
-	printf("\narg 3 is %s\n", argv[3]);
-
-
 	char *filename = argv[2];
 
-	//now time to write the random sequence to fileD
-
-	write_to_file(filename, s_arr);
+	write_record_to_file(filename, s_arr);
 
 	int comp = compare(s_arr, random_int(1, 10), filename);
 
-	//TESTING
-	printf("\nPROGRAM TEST:\n");
-	printf("Result of comparison: %d\n\n", comp);
+	printf("Result of compare record to memory: %d\n", comp);
 
 	float ff = 20000.532;
-	for(int k = 0; k <16000000; k++)
+	for(int k = 0; k <14000000; k++)
 	{
 		
 		ff = ff/1.01;
