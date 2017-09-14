@@ -30,7 +30,7 @@ void main()
 
 	int i  = 0; 
 
-	while(i < 1000) //1000 trials
+	while(i < 100) //100 trials
 	{
 		struct timeval tv;
 		pid_t pid1;
