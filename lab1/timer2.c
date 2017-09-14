@@ -7,7 +7,8 @@ This program: timer2.c
 What it does: 
  - Calls fork() first time and executes Program1.c
  - Records time and then calls fork() again
- - Executes another copy of Program1.c 
+ - Executes another copy of Program1.c and records 
+   start time and end time again
 
 */
 

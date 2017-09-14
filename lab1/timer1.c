@@ -10,7 +10,6 @@ What it does:
  - Executes program1.c in child
  - Parent waits for child to complete
  - After completion, exits
-
 */
 
 #include <stdio.h>
