@@ -1,0 +1,5 @@
+project2a (psuedocode for myShell)
+Name: John Hyland
+Class: CIS 3207
+
+
