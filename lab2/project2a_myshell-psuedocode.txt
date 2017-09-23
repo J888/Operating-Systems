@@ -1,5 +1,94 @@
 project2a (psuedocode for myShell)
 Name: John Hyland
 Class: CIS 3207
+Language: C++
+
+-----------------------------------------
+
+myshell.cpp
+
+Input: gets user input from keyboard
+Output: Depends on what command was executed
+
+
+main()
+{
+	cout << "myshell>";
+	string entered = get line from stdin;
+	parse_line(entered);
+
+	if("exit" was entered)
+	{
+		exit;
+	}
+}
+
+
+-----------------------------------------
+
+parsing.h
+
+
+parser(string s)
+{
+	for (0 < length of s)
+	{
+		if(s[i] is a "space")
+			skip it;
+		if(sequence of not spaces)
+			store as separate string;
+	}
+
+	return the list/array of separate strings;
+}
+
+
+-----------------------------------------
+
+
+builtins.h
+Description of file: contains all builtin commands (don't require a fork,exec)
+
+my_cd()
+{
+	
+}
+
+
+my_clr()
+{
+	
+}
+
+
+my_dir()
+{
+	
+}
+
+
+my_environ()
+{
+	
+}
+
+
+my_echo()
+{
+	
+}
+
+my_help()
+{
+	
+}
+
+
+my_quit()
+{
+	
+}
+
+
 
 
