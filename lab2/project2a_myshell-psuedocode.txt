@@ -11,15 +11,25 @@ Input: gets user input from keyboard
 Output: Depends on what command was executed
 
 
-main()
+main(int argc, char *argv[])
 {
-	cout << "myshell>";
-	string entered = get line from stdin;
-	parse_line(entered);
 
-	if("exit" was entered)
+	if(argc == 2)
 	{
-		exit;
+		take input from a batchfile;
+	}
+
+	else
+	{
+		cout << "myshell>";
+		string entered = get line from stdin;
+		parse_line(entered);
+
+		if("exit" was entered)
+		{
+			exit;
+		}
+
 	}
 }
 
@@ -29,17 +39,41 @@ main()
 parsing.h
 
 
-parser(string s)
+stringarray parse_line(string s)
 {
 	for (0 < length of s)
 	{
-		if(s[i] is a "space")
+		if(s[i] is a "space" char)
 			skip it;
-		if(sequence of not spaces)
+		if(sequence of non-space chars)
 			store as separate string;
 	}
 
 	return the list/array of separate strings;
+}
+
+analyze_args(stringarray arr)
+{
+	if(arr[i] == '|')
+	{
+		pipe();
+	}
+
+	if(arr[i] == '<')
+	{
+
+	}
+
+	if(arr[i] == '>')
+	{
+
+	}
+
+	if(arr[i] == '&')
+	{
+
+	}
+	
 }
 
 
@@ -47,48 +81,64 @@ parser(string s)
 
 
 builtins.h
-Description of file: contains all builtin commands (don't require a fork,exec)
+Description of file: contains all builtin commands (don't require a fork or exec)
 
 my_cd()
 {
-	
+	chdir(path);	
 }
 
 
 my_clr()
 {
-	
+	print 100 newlines;
 }
 
 
 my_dir()
 {
-	
+	declare an array of size MAXPATHLEN;
+
+	getcwd(array, MAXPATHLEN);
+
+	string = array;
+
+	print string;
+
 }
 
 
 my_environ()
 {
-	
+	extern char ** environ;
+	for(all environs)
+	{
+		print each on new line;
+	}
 }
 
 
 my_echo()
 {
-	
+	print everything after the echo command;
+	(everything separated by spaces)
 }
 
 my_help()
 {
-	
+	print the 'help' manual, readme.txt;
 }
 
 
 my_quit()
 {
-	
+	exit the shell program;
 }
 
 
+--------------------------------------------
+pipe.h
 
 
+--------------------------------------------
+io_redirect.h
