@@ -3,10 +3,12 @@
 #include <vector>
 #include <sys/param.h>
 #include <unistd.h>
-# include <sys/wait.h>
+#include <sys/wait.h>
+
+
 using namespace std;
 
-
+#include "evaluater.h"
 
 
 
@@ -54,46 +56,14 @@ int my_fork(int shouldwait)
 int main(void)
 {
 
- 
-	// cout << "enter something:\n";
-	
-	// vector<string> strv;
+ 	string hey = "hey";
 
-	// string line="", temp;
-	// getline(cin, line);
+ 	string s = "this is a test string";
 
-	// //here's the parser
-	// for(int i=0; i<line.length(); i++)
-	// {
-	// 	if(char(line[i]) != ' ')
-	// 	{
-	// 		temp+=line[i];
+ 	vector<string> v = parse_line(s);
 
-	// 		if(i== (line.length()-1))
-	// 		{
-	// 			strv.push_back(temp);
-	// 		}
-	// 	}
+ 	cout << v[0] << endl << v[1];
 
-	// 	else if(char(line[i]) == ' ')
-	// 	{
-	// 		if(!temp.empty())//to skip spaces
-	// 		{
-	// 			strv.push_back(temp);
-	// 			temp="";
-	// 		}
-			
-	// 	}
-
-	// }
-	
-	// cout << strv[0];
-	// cout << strv[1];
-	// cout << strv[2];
-
-	my_fork(0);
-
-	cout << "between" << endl;
 
 
 	

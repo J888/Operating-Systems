@@ -1,29 +1,47 @@
 #include <iostream>
 #include <string>
+#include <vector>
+
 using namespace std;
 
-int main(void)
+#include "evaluater.h"
+
+
+int main(int argc, char *argv[])
 {
 	
-string the_line;
-
-int argc;
-
-char* argv[100];
-
-while(true)
-{
-	cout << "myshell> ";
-
-	getline(cin, the_line); 
-
-	cout << "Command entered was: " << the_line;
-	cout << endl;
-
-	if((the_line == "exit") && (!cin.eof()))
+	if(argc == 2)
 	{
-		exit(0);
+		//take input from batchfile
 	}
-}
+
+	else
+	{
+
+		string the_line;
+
+		while(true)
+		{
+			cout << "myshell> ";
+
+			getline(cin, the_line); 
+
+			// vector<string> args_vect = 
+
+			cout << the_line.length();
+
+			//parse_line(the_line);
+
+			// cout << args_vect[0] << endl;
+			// cout << args_vect[1] << endl;
+			// cout << args_vect[2] << endl;
+			// cout << args_vect[3] << endl;
+
+			if((the_line == "exit") && (!cin.eof()))
+			{
+				exit(0);
+			}
+		}
+	}
 
 }
