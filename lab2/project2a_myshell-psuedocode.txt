@@ -6,11 +6,14 @@ CIS 3207 - Fall 2017
 Language: C++
 Description: blueprint of a basic shell implementation
 
------------------------------------------
-
+-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 myshell.cpp
 Purpose: the main shell loop
 
+
+#include <iostream>
+#include <vector>
+//also include all project header files
 
 main(int argc, char *argv[])
 {
@@ -20,28 +23,33 @@ main(int argc, char *argv[])
 		take input from a batchfile;
 	}
 
-	else
+	else //run shell as usual
 	{
 		cout << "myshell>";
 		string entered = get line from stdin;
-		parse_line(entered);
+		
+		vector<string> arg_vector = parse_line(entered);
 
-		if("exit" was entered)
+		evaluate_args(arg_vector);
+
+		if("exit" or "quit" was entered)
 		{
-			exit;
+			exit the shell;
 		}
 
 	}
 }
 
 
+
+
+
 -----------------------------------------
+evaluater.h
+Purpose: defines functions for string parsing and deciding how to execute commands/args
 
-eval.h
-Purpose: contains all functions that parse the input string and decide how to execute
 
-
-stringarray parse_line(string s)
+vector<string> parse_line(string s)
 {
 	for (0 < length of s)
 	{
@@ -57,133 +65,177 @@ stringarray parse_line(string s)
 
 
 
-
-evaluate_args(stringarray arr)
+void evaluate_args(vector<string> s)
 {
+	int shouldwait = 1;
 
-	if(arr[i] == '|')
+	if(s[last index] == '&')
 	{
-		make_pipe();
+		s.pop_back(); //get rid of the '&'
+
+		shouldwait = 0;
 	}
 
-	if(arr[i] == '<')
+
+
+	int x = 0; // flag to know when '<' or '>' or '|' found
+
+	for(int k = 0; k < s.length; k++)
 	{
-		//send file as program input
-		io_redirect();
+
+		if(s[i] == '|')
+		{
+			split s into 2 cmd vectors;
+
+			fork_and_pipe(cmd1, cmd2, shouldwait);
+
+			x = 1;
+
+			break;
+			
+		}
+
+		else if(s[i] == '<')
+		{
+			split s into cmd and file;
+
+			//send file as program input
+			io_redirect(cmd, file, 0);
+
+			x = 1;
+
+			break;
+		}
+
+		else if(s[i] == '>')
+		{
+			split s into cmd and file;
+
+			//send output of program to file
+			io_redirect(cmd, file, 1);
+
+			x = 1;
+
+			break;
+		}
+
 	}
 
-	if(arr[i] == '>')
+	if(!x)
 	{
-		//send output of program to file
-		io_redirect();
+		my_fork(s, shouldwait)
 	}
 
-	if(arr[last index] == '&')
-	{
-		run program in the background;
-	}
+
+
+
+
 	
 }
 
 
-is_builtin()
+
+
+int is_builtin(vector<string> s)
 {
-	if(the the cmd is a builtin)
-		return true;
+	if(first element in s is a builtin)
+		return 1;
 	else
-		return false;
+		return 0;
 }
 
 
------------------------------------------
 
+
+
+
+-----------------------------------------
 builtins.h
 Purpose: defines all builtin functions
 
-my_cd()
+void my_cd()
 {
 	chdir(path);	
 }
 
 
-my_clr()
+void my_clr()
 {
 	print 100 newlines;
 }
 
 
-my_dir()
+void my_dir()
 {
 	declare an array of size MAXPATHLEN;
 
 	getcwd(array, MAXPATHLEN);
 
-	string = array;
+	string curr_dir = array;
 
-	print string;
+	print curr_dir;
 
 }
 
 
-my_environ()
+void my_environ()
 {
 	extern char ** environ;
+
 	for(all environs)
 	{
-		print each on new line;
+		print each environment variable on new line;
 	}
 }
 
 
-my_echo()
+void my_echo()
 {
-	print everything after the echo command;
-	(everything separated by spaces)
-}
-
-my_help()
-{
-	print the 'help' manual, readme.txt;
+	print what came after 'echo';
 }
 
 
-my_quit()
+void my_help()
 {
-	exit the shell program;
+	print the 'help' user manual (readme.txt);
+	//readme.txt will describe the commands and how to use the shell
 }
+
+
 
 
 
 
 --------------------------------------------
-forks.h
+forker.h
 Purpose: defines all functions for fork-ing and exec-ing
 
 
-int my_fork(command and arguments)
+void my_fork(command and arguments, int shouldwait)
 {
 
-	declare a pid_t pid;
+	pid_t pid;
 
-	pid = fork();
-
-	if(pid is < 0)
+	if( (pid = fork()) returns < 0) //ERROR
 	{
 		error message;
 		exit;
 	} 
 
-	else if(pid is 0)
+	else if(pid returns 0) // CHILD
 	{
-		execute command with arguments;
+		execute the command and give it any specified arguments;
 		exit;
 	}
 
-	else
+	else // PARENT
 	{
+		if(shouldwait)
+		{
+			wait for child to finish and exit;
+		}
 
-		wait for child to finish and exit;
-		exit back to shell;
+		//here go back to main shell prompt;
 	}
 
 	
@@ -192,61 +244,127 @@ int my_fork(command and arguments)
 
 
 
-background_fork()
-{
-	
-}
 
 
 --------------------------------------------
-pipe.h
-Purpose: a function to fork and pipe
+piper.h
+Purpose: defines a function to pipe between 2 processes
 
 
-make_pipe()
+#include <unistd.h>
+#include <fcntl.h>
+
+void fork_and_pipe(vector<string> program1, vector<string> program2,  int shouldwait)
 {
 	
+	int fd[2];
 
+	make pipe with pipe(fd);
+
+	FIRST fork,  pid = fork();
+
+	if (error)
+	{
+		output error message and exit;
+	}
+
+	else if (this is child 1)
+	{
+
+		
+		SECOND fork, pid2 = fork();
+
+		//again check for error
+
+		if(this is child 2)
+		{
+
+			close(write end of pipe);
+			dup2(read end);
+			execute PROGRAM #1;
+
+		}
+
+		else // in parent 2
+		{
+
+			close(read end of pipe);
+			dup2(write end);
+			execute PROGRAM #2 with dup'd stdin that is really the stdout of PROGRAM # 1
+
+		}
+
+
+	}
+
+	else // in parent 1
+	{
+		if(shouldwait)
+		{
+			wait(NULL); // wait for the 2 processes to finish
+		}
+
+		//here go back to main shell prompt
+	}
 
 
 }
 
 
---------------------------------------------
 
+
+
+
+--------------------------------------------
 io_redirect.h
-Purpose: a function to redirect stdout of a program
+Purpose: defines a function to redirect stdout of a program
 
 
-io_redirect(integer redirect)
+void io_redirect(vector<string> cmds, string file, integer redirect_to, int shouldwait)
 {
-
 
 	//rediret INPUT
 	if(redirect == 0)
 	{
-		int fd = open the file
+		int fd = open the file;
 
 		dup2(fd, 0);
 
-		my_execute(program);
+		my_fork(cmd and stdin used as args, shouldwait);
 
 		close the file;
+
 	}
 
 
 	//redirect OUTPUT
-	if(redirect == 0)
+	if(redirect == 1)
 	{
 		//redirect input
-		int fd = open the output
+		int fd = open the output;
 
-		dup2(fd, 0);
+		dup2(fd, 1);
 
-		my_execute(program);
+		my_fork(cmds, shouldwait);
 
+		write stdout to file;
 		close the file;
 	}
 
+	//redirect OUTPUT APPEND
+	if(redirect == 2)
+	{
+		//redirect input
+		int fd = open the output;
+
+		dup2(fd, 1);
+
+		my_fork(cmds, shouldwait);
+
+		write stdout to file, in append mode;
+		close the file;
+	}
 	
+
 }
+
