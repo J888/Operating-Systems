@@ -13,7 +13,7 @@ char* argv[100];
 
 while(true)
 {
-	cout << "J-Shell> ";
+	cout << "myshell> ";
 
 	getline(cin, the_line); 
 

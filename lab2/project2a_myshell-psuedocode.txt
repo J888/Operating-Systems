@@ -1,20 +1,21 @@
-project2a (psuedocode for myShell)
-Name: John Hyland
-Class: CIS 3207
+Project2a - Psuedocode for myShell
+
+John Hyland
+CIS 3207 - Fall 2017
+
 Language: C++
+Description: blueprint of a basic shell implementation
 
 -----------------------------------------
 
 myshell.cpp
-
-Input: gets user input from keyboard
-Output: Depends on what command was executed
+Purpose: the main shell loop
 
 
 main(int argc, char *argv[])
 {
 
-	if(argc == 2)
+	if(2 args passed to ./myshell)
 	{
 		take input from a batchfile;
 	}
@@ -36,7 +37,8 @@ main(int argc, char *argv[])
 
 -----------------------------------------
 
-parsing.h
+eval.h
+Purpose: contains all functions that parse the input string and decide how to execute
 
 
 stringarray parse_line(string s)
@@ -52,36 +54,51 @@ stringarray parse_line(string s)
 	return the list/array of separate strings;
 }
 
-analyze_args(stringarray arr)
+
+
+
+
+evaluate_args(stringarray arr)
 {
+
 	if(arr[i] == '|')
 	{
-		pipe();
+		make_pipe();
 	}
 
 	if(arr[i] == '<')
 	{
-
+		//send file as program input
+		io_redirect();
 	}
 
 	if(arr[i] == '>')
 	{
-
+		//send output of program to file
+		io_redirect();
 	}
 
-	if(arr[i] == '&')
+	if(arr[last index] == '&')
 	{
-
+		run program in the background;
 	}
 	
 }
 
 
+is_builtin()
+{
+	if(the the cmd is a builtin)
+		return true;
+	else
+		return false;
+}
+
+
 -----------------------------------------
 
-
 builtins.h
-Description of file: contains all builtin commands (don't require a fork or exec)
+Purpose: defines all builtin functions
 
 my_cd()
 {
@@ -136,9 +153,100 @@ my_quit()
 }
 
 
+
+
+--------------------------------------------
+forks.h
+Purpose: defines all functions for fork-ing and exec-ing
+
+
+int my_fork(command and arguments)
+{
+
+	declare a pid_t pid;
+
+	pid = fork();
+
+	if(pid is < 0)
+	{
+		error message;
+		exit;
+	} 
+
+	else if(pid is 0)
+	{
+		execute command with arguments;
+		exit;
+	}
+
+	else
+	{
+
+		wait for child to finish and exit;
+		exit back to shell;
+	}
+
+	
+}
+
+
+
+
+background_fork()
+{
+	
+}
+
+
 --------------------------------------------
 pipe.h
+Purpose: a function to fork and pipe
+
+
+make_pipe()
+{
+	
+
+
+
+}
 
 
 --------------------------------------------
+
 io_redirect.h
+Purpose: a function to redirect stdout of a program
+
+
+io_redirect(integer redirect)
+{
+
+
+	//rediret INPUT
+	if(redirect == 0)
+	{
+		int fd = open the file
+
+		dup2(fd, 0);
+
+		my_execute(program);
+
+		close the file;
+	}
+
+
+	//redirect OUTPUT
+	if(redirect == 0)
+	{
+		//redirect input
+		int fd = open the output
+
+		dup2(fd, 0);
+
+		my_execute(program);
+
+		close the file;
+	}
+
+	
+}
