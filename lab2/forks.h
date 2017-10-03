@@ -4,17 +4,17 @@ int my_fork()
 
 	pid_t pid;
 
-	pid = fork();
-
-	if(pid == -1)
+	if( (pid = fork()) < 0)
 	{
 		cout << "error" << endl;
 		exit(-1);
 	}
 	else if(pid == 0)
 	{
-		//child
-		cout << "I am child" << endl;
+		//child, execute program here
+		
+		execv
+
 		exit(0);
 	}
 
@@ -26,6 +26,11 @@ int my_fork()
 	}
 
 	return 1;
+
+}
+
+void fork_and_pipe()
+{
 
 }
 

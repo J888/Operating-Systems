@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
 	{
 
 		string the_line;
+		vector<string> args_vect;
 
 		while(true)
 		{
@@ -26,16 +27,9 @@ int main(int argc, char *argv[])
 
 			getline(cin, the_line); 
 
-			// vector<string> args_vect = 
+			args_vect = parse_line(the_line);
 
-			cout << the_line.length();
-
-			//parse_line(the_line);
-
-			// cout << args_vect[0] << endl;
-			// cout << args_vect[1] << endl;
-			// cout << args_vect[2] << endl;
-			// cout << args_vect[3] << endl;
+			eval_args(args_vect);
 
 			if((the_line == "exit") && (!cin.eof()))
 			{
