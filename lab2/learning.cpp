@@ -74,22 +74,23 @@ const char** convert_vector(vector<string> s)
 
 
 
+
 int main(void)
 {
 
 
- 	vector<string> strs = {"./program", "arg1", "arg2", "arg3"};
+ // 	vector<string> strs = {"./program", "arg1", "arg2", "arg3"};
 
- 	const char** commands = convert_vector(strs);
+ // 	const char** commands = convert_vector(strs);
 
- 	cout << "1 is: " << commands[0] << endl;
- 	cout << "2 is: " << commands[1] << endl;
- 	cout << "3 is: " << commands[2] << endl;
-	cout << "4 is: " << commands[3] << endl;
+ // 	cout << "1 is: " << commands[0] << endl;
+ // 	cout << "2 is: " << commands[1] << endl;
+ // 	cout << "3 is: " << commands[2] << endl;
+	// cout << "4 is: " << commands[3] << endl;
 
+	int flag = redirect = 0;
 
-
-
+	cout << flag << redirect;
 
 	
 }

@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
 				exit(0);
 			}
 		}
+		//before shell exit, should end all processes in process list
 	}
 
 }
