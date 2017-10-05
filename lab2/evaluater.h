@@ -33,8 +33,8 @@ vector<string> parse_line(string entered)
 	return v;
 }
 
-/* returns unique int if builtin, otherwise
-   returns 0 */
+/* returns unique int in range 1-6 if 
+	builtin,s otherwise returns 0 */
 int is_builtin(string s)
 {
 	if(s=="cd")
@@ -156,10 +156,20 @@ void eval_args(vector<string> avec)
 	int flag = 0;
 
 
-	vector<string> elem1, elem2, elem3; //line elements
+	vector<string> elem1, elem2;
+	string file1, file2; //line elements
 
 	/* loops through the vector to find an operator 
-		and then takes action accordingly if one found */
+		and then takes action accordingly if one found 
+	
+	list of the redirect options for io_redirect():
+	0 - redirect input
+	1 - redirect output (not appended)
+	2 - redirect output (appended)
+	3 - redirect input THEN output (not appended)
+	4 - redirect input THEN output (appended)
+	*/
+		
 	for(int k = 0;  k < avec.size(); k++)
 	{
 
@@ -170,7 +180,7 @@ void eval_args(vector<string> avec)
 			elem1 = split_up(avec, 1, 0, k);
 			elem2 = split_up(avec, 0, 1, k);
 
-			fork_and_pipe(elem1, elem2, shouldwait);
+			my_piper(elem1, elem2, shouldwait);
 			break;
 
 		}
@@ -182,10 +192,10 @@ void eval_args(vector<string> avec)
 		{ //redirect IN, then OUT
 
 			elem1 = split_up(avec, 1, 0, k);
-			elem2 = avec[k+1];
-			elem3 = avec[k+3];
+			file1name = avec[k+1];
+			file2name = avec[k+3];
 
-			io_redirect();
+			io_redirect(elem1, 3, shouldwait, file1name, file2name);
 			break;
 
 		}
@@ -193,10 +203,10 @@ void eval_args(vector<string> avec)
 				 && (avek[k+2] == ">>") )
 		{ //redirect IN + APPEND OUT
 			elem1 = split_up(avec, 1, 0, k);
-			elem2 = avec[k+1];
-			elem3 = avec[k+3];
+			file1name = avec[k+1];
+			file2name = avec[k+3];
 
-			io_redirect();
+			io_redirect(elem1, 4, shouldwait, file1name, file2name);
 			break;
 
 		}
@@ -207,9 +217,9 @@ void eval_args(vector<string> avec)
 			flag = 1;
 
 			elem1 = split_up(avec, 1, 0, k);
-			elem2 = split_up(avec, 0, 1, k);
+			file1name = avec[k+1];
 
-			io_redirect();
+			io_redirect(elem1, 0, shouldwait, file1name);
 			break;
 		}
 
@@ -218,9 +228,9 @@ void eval_args(vector<string> avec)
 			flag = 1; 
 
 			elem1 = split_up(avec, 1, 0, k);
-			elem2 = split_up(avec, 0, 1, k);
+			file1name = avec[k+1];
 
-			io_redirect();
+			io_redirect(elem1, 1, shouldwait, file1name);
 			break;
 
 		}
@@ -230,9 +240,9 @@ void eval_args(vector<string> avec)
 			flag = 1; 
 
 			elem1 = split_up(avec, 1, 0, k);
-			elem2 = split_up(avec, 0, 1, k);
+			file1name = avec[k+1];
 
-			io_redirect();
+			io_redirect(elem1, 2, shouldwait, file1name);
 			break;
 
 		}

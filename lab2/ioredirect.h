@@ -1,7 +1,7 @@
 
 /*this function handles io_redirection
-  by taking all commands, options, files, 
-  which are referred to here as elements (e's) */
+  for a command and up to 2 files
+  file2 is optional */
 void io_redirect(vector<string> cmd_element, int redirect_type, 
 	int shouldwait, string file1, string file2 = "")
 {
@@ -53,7 +53,11 @@ void io_redirect(vector<string> cmd_element, int redirect_type,
 	// would be this format:  cmd < file1 >> file2
 	if(redirect_type == 4)
 	{
+		fd1 = open(file1, O_RDONLY);
+		dup2(fd1, 0);
 
+		fd2 = open(file2, O_CREAT|O_APPEND|O_WRONLY, S_IRWXU);
+		dup2, 1);
 	}
 
 	
