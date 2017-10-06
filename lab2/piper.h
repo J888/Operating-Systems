@@ -1,8 +1,5 @@
 #include "vectorconvert.h"
 
-#define READ 0
-#define WRITE 1
-
 /* pipes program 1's output to program 2's input*/
 void my_piper(vector<string> element1, vector<string> element2, int shouldwait) 
 {
@@ -11,7 +8,7 @@ void my_piper(vector<string> element1, vector<string> element2, int shouldwait)
 
 	if( pipe(fd) == -1)
 	{
-		cout << "pipe error";
+		cerr << "\npipe error\n";
 		exit(-1);
 	}
 
@@ -19,7 +16,7 @@ void my_piper(vector<string> element1, vector<string> element2, int shouldwait)
 
 	if(pid1 < 0)
 	{
-		cout << "error in fork1";
+		cerr << "\nerror in fork1\n";
 		exit(-1);
 	}
 
@@ -29,13 +26,15 @@ void my_piper(vector<string> element1, vector<string> element2, int shouldwait)
 
 		if(pid2 < 0)
 		{
-			cout << "error in fork2";
+			cerr << "\nerror in fork2\n";
 			exit(-1);
 		} 
 
 		else if(pid2 == 0) //child2
 		{
-			close()//read end
+			close(1);//close stdout and wire to pipe-WRITE-end 
+			dup2(fd[1], 1); 
+			close(fd[0]);//this process won't be using pipe-READ-end
 
 			//execute program1
 			const char** the_args = convert_vector(element1);
@@ -44,10 +43,14 @@ void my_piper(vector<string> element1, vector<string> element2, int shouldwait)
 
 		else //parent2
 		{
-			close()//write end
+			close()//close stdin and wire to pipe-read-end
+			dup2(fd[0], 0);
+			close(fd[1]);//this process won't be using pipe-WRITE-end
+
+			//execute program2
 			const char** the_args2 = convert_vector(element2);
 			execv(the_args2[0], the_args2);
-			//execute program2
+			
 
 		}
 
@@ -55,7 +58,10 @@ void my_piper(vector<string> element1, vector<string> element2, int shouldwait)
 	}
 	else //parent1
 	{
-
+		if(shouldwait)
+		{
+			wait(NULL);
+		}
 	}
 
 

@@ -35,9 +35,9 @@ void my_env()
 }
 
 
-void my_echo()
+void my_echo(vector<string> s)
 {
-	for(less than length of vector)
+	for(int i = 0; i < s.size(); i++)
 	{
 		cout << s[i] << " ";
 	}

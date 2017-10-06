@@ -13,7 +13,7 @@ vector<string> parse_line(string entered)
 	int i = 0;
 	int l = entered.length();
 
-	while(  i < l )
+	while( i < l )
 	{
 
 		if(entered[i] != ' ')
@@ -136,7 +136,8 @@ vector<string> split_up(vector<string> entire, int before, int after, int index)
 
 
 
-
+/* decides what to do with the given commands/options/operators
+   and calls the appropriate functions */
 void eval_args(vector<string> avec)
 {
 
@@ -175,6 +176,7 @@ void eval_args(vector<string> avec)
 
 		if(avec[k] == "|") 
 		{ // PIPE
+
 			flag = 1; 
 
 			elem1 = split_up(avec, 1, 0, k);
@@ -254,6 +256,8 @@ void eval_args(vector<string> avec)
 	{
 		my_fork(avec);
 	}
+
+
 
 
 }

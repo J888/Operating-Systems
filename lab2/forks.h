@@ -1,4 +1,3 @@
-
 #include "vectorconvert.h"
 
 /* regular fork, creates one new process
@@ -11,7 +10,7 @@ int my_fork(vector<string> vec)
 	if( (pid = fork()) < 0)
 	{
 		
-		cout << "error" << endl;
+		cerr << "\nerror forking\n";
 
 		exit(-1);
 
