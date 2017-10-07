@@ -1,4 +1,4 @@
-#include "vectorconvert.h"
+#include <sys/wait.h>
 
 /* regular fork, creates one new process
     and runs the command in it  */
@@ -20,7 +20,7 @@ int my_fork(vector<string> vec)
 		//child, execute program here
 		const char**the_args = convert_vector(vec);		
 
-		execv(the_args[0], the_args);
+		execv(the_args[0], (char* const*)the_args);
 	}
 
 	else

@@ -1,3 +1,4 @@
+
 /*converts vector of strings into an array of 
 const char*s */
 const char** convert_vector(vector<string> s)
@@ -5,7 +6,7 @@ const char** convert_vector(vector<string> s)
 
 	int the_size = s.size();
 
-	const char **argv = new const char*[the_size+2];
+	const char ** argv = new const char*[the_size+2];
 
 	argv[0] = s[0].c_str();
 
