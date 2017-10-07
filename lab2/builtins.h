@@ -1,9 +1,31 @@
+
+#include<dirent.h>
 //contains all built in functions for myshell
 
 
+
+
+string my_getcwd()
+{
+	char buff[100];
+
+	getcwd(buff, 100);
+
+	string s = buff;
+
+	return s;
+}
+
+
+
+/* changes current working directory to one specified
+	by user */
 void my_cd(vector<string> s)
 {
-	chdir(s[1].c_str());	
+	if ( chdir(s[1].c_str()) < 0 )
+	{
+		cerr << "cd failed: directory not found\n";
+	}	
 }
 
 
@@ -21,9 +43,20 @@ void my_clr2()
 }
 
 
+/* prints the contents of the current directory */
 void my_dir()
 {
 
+	DIR * opendirectory = opendir(my_getcwd().c_str());
+
+	struct dirent *contents_pointer;
+
+	while( (contents_pointer = readdir(opendirectory) ) != NULL )
+	{
+		cout << contents_pointer->d_name << endl;
+	}
+
+	closedir(opendirectory);
 
 }
 
@@ -47,8 +80,8 @@ char* my_getenv(string env_var)
 	char* the_var;
 	if( (the_var = getenv(env_var.c_str())) == NULL)
 	{
-		cerr << "that's not a valid environment variable\n";
-		return 0;
+		cerr << "echo failed: not a valid environment variable\n";
+		return NULL;
 	} 
 	else
 	{
@@ -61,7 +94,8 @@ char* my_getenv(string env_var)
  on new line */
 void my_echo(vector<string> s)
 {
-	if(s[0] == "") // accounts for empty input
+
+	if( ( s[0] == "") || (s[0] == " ")  || (s.size()==1) ) // accounts for empty input
 	{
 		cout << "\n";
 	}

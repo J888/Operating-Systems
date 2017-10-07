@@ -10,19 +10,6 @@ using namespace std;
 
 
 
-
-void my_getcwd()
-{
-	char buff[100];
-
-	getcwd(buff, 100);
-
-	string s = buff;
-
-	cout << s;
-}
-
-
 int main(int argc, char *argv[])
 {
 	
@@ -41,9 +28,7 @@ int main(int argc, char *argv[])
 
 		while(true)
 		{
-			cout << hostname << ":"; 
-			my_getcwd();
-			cout << "> ";
+			cout << hostname << ":" << my_getcwd() << "> "; 
 
 			getline(cin, the_line); 
 
@@ -52,9 +37,9 @@ int main(int argc, char *argv[])
 				exit(0);
 			}
 
-			else
+			else if(the_line!="")
 			{
-				
+
 				args_vect = parse_line(the_line);
 
 				eval_args(args_vect);
