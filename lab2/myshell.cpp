@@ -1,14 +1,21 @@
 #include <iostream>
-#include<unistd.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <string>
 #include <vector>
+#include <sys/wait.h>
 
 using namespace std;
 
+#include "vectorconvert.h"
+
+
+#include "builtins.h"
+#include "piper.h"
+#include "forks.h"
+#include "ioredirect.h"
+ 
 #include "evaluater.h"
-
-
 
 int main(int argc, char *argv[])
 {
@@ -24,7 +31,6 @@ int main(int argc, char *argv[])
 		gethostname(hostname, 50);
 
 		string the_line;
-		vector<string> args_vect;
 
 		while(true)
 		{
@@ -40,15 +46,12 @@ int main(int argc, char *argv[])
 			else if(the_line!="")
 			{
 
-				args_vect = parse_line(the_line);
+				eval_args(parse_line(the_line));
 
-				eval_args(args_vect);
 			}
-
-
 			
 		}
-		//before shell exit, should end all processes in process list
+
 	}
 
 }

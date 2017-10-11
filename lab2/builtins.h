@@ -1,8 +1,5 @@
-
 #include<dirent.h>
 //contains all built in functions for myshell
-
-
 
 
 string my_getcwd()
@@ -15,7 +12,6 @@ string my_getcwd()
 
 	return s;
 }
-
 
 
 /* changes current working directory to one specified

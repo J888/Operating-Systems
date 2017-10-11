@@ -1,5 +1,3 @@
-#include <sys/wait.h>
-
 /* regular fork, creates one new process
     and runs the command in it  */
 pid_t my_fork(vector<string> vec)
@@ -29,7 +27,7 @@ pid_t my_fork(vector<string> vec)
 
 	}
 
-	return 1;
+	return getpid();
 
 }
 

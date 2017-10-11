@@ -1,6 +1,5 @@
-
 /* pipes program 1's output to program 2's input
-	if program 1 is a builtin, there is no call to exec in child1 */
+   if program 1 = builtin, no exec'ing in child1 */
 void my_pipe(vector<string> element1, vector<string> element2, int shouldwait, int which_builtin) 
 {
 	int fd[2];

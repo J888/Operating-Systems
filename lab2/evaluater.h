@@ -1,20 +1,7 @@
 /* evaluator.h
-   Responsible for all parsing and evaluating of shell commands*/
-
-#include <iostream>
-#include <vector>
-#include <string>
+   Responsible for all parsing + evaluation of shell commands*/
 #include <fstream>
-#include <sys/wait.h>
 #include <signal.h>
-#include "ioredirect.h"
-
-#include "builtins.h"
-#include "vectorconvert.h"
-
-#include "forks.h"
-#include "piper.h"
-
 
 vector<string> parse_line(string entered)
 {
@@ -22,7 +9,6 @@ vector<string> parse_line(string entered)
 	vector<string> v;
 
 	string pushto = "";
-
 
 	int i = 0;
 	int len = entered.length();
@@ -87,15 +73,15 @@ int is_builtin(string s)
 
 
 
-/* returns cmd before or after operator */
-vector<string> split_up(vector<string> entire, int before, int after, int index)
+/* returns command element before or after operator */
+vector<string> split_up(vector<string> entire, int position, int index)
 {
 
 	vector<string> the_element;
 
 	int m = 0;
 
-	if(before && !after) 
+	if(position == -1)  
 	{
 		while(m < index) //copy everything before operator
 		{
@@ -106,7 +92,7 @@ vector<string> split_up(vector<string> entire, int before, int after, int index)
 	}
 	
 
-	if(after && !before)
+	else if(position == 1)
 	{
 		m = index + 1;
 
@@ -141,8 +127,6 @@ void eval_args(vector<string> avec)
 		avec.pop_back();
 	}
 
-
-
 	vector<string> elem1, elem2;
 	string file1name, file2name; //line elements
 
@@ -165,8 +149,8 @@ void eval_args(vector<string> avec)
 
 			flag = 1; 
 
-			elem1 = split_up(avec, 1, 0, k);
-			elem2 = split_up(avec, 0, 1, k);
+			elem1 = split_up(avec, -1, k);
+			elem2 = split_up(avec, 1, k);
 
 			my_pipe(elem1, elem2, shouldwait, which_builtin);
 			break;
@@ -177,7 +161,7 @@ void eval_args(vector<string> avec)
 				 && (avec[k+2] == ">") )
 		{ //redirect IN, then OUT
 
-			elem1 = split_up(avec, 1, 0, k);
+			elem1 = split_up(avec, -1, k);
 			file1name = avec[k+1];
 			file2name = avec[k+3];
 
@@ -189,7 +173,7 @@ void eval_args(vector<string> avec)
 		else if(    (avec[k]   == "<" )
 				 && (avec[k+2] == ">>") )
 		{ //redirect IN, then APPEND OUT
-			elem1 = split_up(avec, 1, 0, k);
+			elem1 = split_up(avec, -1, k);
 			file1name = avec[k+1];
 			file2name = avec[k+3];
 
@@ -202,7 +186,7 @@ void eval_args(vector<string> avec)
 		{ //redirect only IN 
 			flag = 1;
 
-			elem1 = split_up(avec, 1, 0, k);
+			elem1 = split_up(avec, -1, k);
 			file1name = avec[k+1];
 
 			io_redirect(elem1, 0, shouldwait, file1name);
@@ -213,7 +197,7 @@ void eval_args(vector<string> avec)
 		{	//redirect only OUT
 
 
-			elem1 = split_up(avec, 1, 0, k);
+			elem1 = split_up(avec, -1, k);
 
 			file1name = avec[k+1];
 
@@ -235,7 +219,7 @@ void eval_args(vector<string> avec)
 		else if(avec[k] == ">>")
 		{ //redirect only OUT + APPEND
 
-			elem1 = split_up(avec, 1, 0, k);
+			elem1 = split_up(avec, -1, k);
 			file1name = avec[k+1];
 
 			if(!which_builtin)
@@ -288,8 +272,7 @@ void eval_args(vector<string> avec)
 	/* no operator found? not a builtin? must be single program execution*/
 	else if(!flag && !which_builtin)
 	{
-		pid_t forked_process_id = my_fork(avec);
-		kill(forked_process_id, SIGKILL); //terminate process
+		my_fork(avec);
 	} 
 	//return to shell
 }

@@ -1,4 +1,3 @@
-
 /*converts vector of strings into an array of 
 const char*s */
 const char** convert_vector(vector<string> s)
