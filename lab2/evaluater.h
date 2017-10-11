@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <sys/wait.h>
+#include <signal.h>
 #include "ioredirect.h"
 
 #include "builtins.h"
@@ -49,7 +51,7 @@ vector<string> parse_line(string entered)
 
 
 /* returns unique int in range 1-6 if 
-	builtin,s otherwise returns 0 */
+	builtin otherwise returns 0 */
 int is_builtin(string s)
 {
 	if(s=="cd")
@@ -212,6 +214,7 @@ void eval_args(vector<string> avec)
 
 
 			elem1 = split_up(avec, 1, 0, k);
+
 			file1name = avec[k+1];
 
 			if(!which_builtin)
@@ -285,8 +288,9 @@ void eval_args(vector<string> avec)
 	/* no operator found? not a builtin? must be single program execution*/
 	else if(!flag && !which_builtin)
 	{
-		my_fork(avec);
-	}
-
+		pid_t forked_process_id = my_fork(avec);
+		kill(forked_process_id, SIGKILL); //terminate process
+	} 
+	//return to shell
 }
 

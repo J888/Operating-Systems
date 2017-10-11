@@ -135,19 +135,26 @@ void run_builtin(vector<string> v, int which_one, int should_redirect = 0, strin
 
 	if(should_redirect)
 	{
-		saveout = dup(1);
+		if( (saveout = dup(1)) == -1)
+		{
+			cerr << "error dup'ing";
+
+		}
+		close(1);
 
 		if(should_redirect == 2) // Append 
 		{
-			int writehere = open(fn, O_CREAT|O_APPEND| O_WRONLY, S_IRWXU);
+			writehere = open(fn, O_CREAT|O_APPEND| O_WRONLY, S_IRWXU);
 		}
 		else // Don't append
 		{
-			int writehere = open(fn, O_CREAT| O_WRONLY, S_IRWXU);
+			writehere = open(fn, O_CREAT| O_WRONLY, S_IRWXU);
 		}
 		
-		dup2(writehere, 1); // point FD 1 to writehere
-
+		if ( (dup2(writehere, 1)) ==-1) // point FD 1 to writehere
+		{
+			cerr << "error dup2'ing";
+		}
 	}
 
 	switch(which_one)
@@ -174,6 +181,7 @@ void run_builtin(vector<string> v, int which_one, int should_redirect = 0, strin
 
 	if(should_redirect)
 	{
+		close(writehere);
 		dup2(saveout, 1); // point FD 1 back to original stdout  
 	}
 

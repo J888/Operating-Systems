@@ -2,7 +2,7 @@
 
 /* regular fork, creates one new process
     and runs the command in it  */
-int my_fork(vector<string> vec)
+pid_t my_fork(vector<string> vec)
 {
 
 	pid_t pid;
@@ -11,7 +11,6 @@ int my_fork(vector<string> vec)
 	{
 		
 		cerr << "\nerror forking\n";
-
 		exit(-1);
 
 	}
@@ -23,7 +22,7 @@ int my_fork(vector<string> vec)
 		execv(the_args[0], (char* const*)the_args);
 	}
 
-	else
+	else if(pid > 0)
 	{
 		wait(NULL);
 		cout << "I am parent" << endl;
