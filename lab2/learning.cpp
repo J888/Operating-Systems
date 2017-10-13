@@ -4,54 +4,16 @@
 #include <sys/param.h>
 #include <unistd.h>
 #include <sys/wait.h>
-
+#include <sys/types.h>
+#include <fcntl.h>
 
 using namespace std;
 
+#include "builtins.h"
+#include "vectorconvert.h"
+#include "piping.h"
 
-
-
-
-// int my_fork(int shouldwait, const char* ch[])
-// {
-
-// 	pid_t pid;
-
-// 	pid = fork();
-
-// 	if(pid == -1)
-// 	{
-// 		cout << "error" << endl;
-// 		exit(-1);
-// 	}
-// 	else if(pid == 0)
-// 	{
-// 		//child
-		
-// 		execv("./hey", ch);
-
-// 		exit(0);
-// 	}
-
-// 	else
-// 	{
-// 		if(shouldwait)
-// 		{
-// 			wait(NULL);
-// 		}
-
-		
-
-
-// 	}
-
-// 	return 1;
-
-
-// }
-
-
-/*converts vector of strings into an array of const char* */
+/*converts vector of strings into an array of const char* 
 const char** convert_vector(vector<string> s)
 {
 
@@ -70,7 +32,7 @@ const char** convert_vector(vector<string> s)
 
 	return argv;
 
-}
+} */
 
 
 
@@ -78,19 +40,9 @@ const char** convert_vector(vector<string> s)
 int main(void)
 {
 
+//pid_t my_pipe(vector<string> element1, vector<string> element2, int shouldwait, int which_builtin)
+	vector<string> s1 = {"./w"};
+	vector<string> s2 = {"./r"};
+	my_pipe(s1, s2, 1, 0);
 
- // 	vector<string> strs = {"./program", "arg1", "arg2", "arg3"};
-
- // 	const char** commands = convert_vector(strs);
-
- // 	cout << "1 is: " << commands[0] << endl;
- // 	cout << "2 is: " << commands[1] << endl;
- // 	cout << "3 is: " << commands[2] << endl;
-	// cout << "4 is: " << commands[3] << endl;
-
-	int flag = redirect = 0;
-
-	cout << flag << redirect;
-
-	
 }

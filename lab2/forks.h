@@ -1,6 +1,6 @@
 /* regular fork, creates one new process
     and runs the command in it  */
-pid_t my_fork(vector<string> vec)
+pid_t my_fork(vector<string> vec, int shouldwait)
 {
 
 	pid_t pid;
@@ -17,17 +17,29 @@ pid_t my_fork(vector<string> vec)
 		//child, execute program here
 		const char**the_args = convert_vector(vec);		
 
-		execv(the_args[0], (char* const*)the_args);
+		if(  (execv(the_args[0], (char* const*)the_args) == -1)  )
+		{
+			return -1;
+		}
 	}
 
 	else if(pid > 0)
 	{
-		wait(NULL);
+		if(shouldwait)
+		{
+			wait(NULL);
+			return 0;
+		}
+		else
+		{
+			return pid;
+		}
+	
 		cout << "I am parent" << endl;
 
 	}
 
-	return getpid();
+
 
 }
 

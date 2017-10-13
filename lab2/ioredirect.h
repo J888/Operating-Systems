@@ -1,7 +1,7 @@
 //#include "forks.h"
 /*handles io_redirection for a command and up to 2 files
   file2 is an optional parameter */
-void io_redirect(vector<string> cmd_element, int redirect_type, 
+pid_t io_redirect(vector<string> cmd_element, int redirect_type, 
 	int shouldwait, string file1, string file2 = "")
 {
 
@@ -12,6 +12,7 @@ void io_redirect(vector<string> cmd_element, int redirect_type,
 	int savestd_out = dup(1);
 	int savestd_in = dup(0);
 
+	pid_t pid;
 
 	//redirect INPUT
 	if(redirect_type == 0)
@@ -19,16 +20,14 @@ void io_redirect(vector<string> cmd_element, int redirect_type,
 		fd1 = open(f1, O_RDONLY);
 		dup2(fd1, 0); //in from file1
 
-		pid_t forked_process_id = my_fork(cmd_element);
-		kill(forked_process_id, SIGKILL); //terminate process
+		pid = my_fork(cmd_element, shouldwait);
 
 		close(fd1);
 		dup2(savestd_in, 0);
 	}
 
-
 	//redirect OUTPUT
-	if((redirect_type == 1)||(redirect_type == 2) )
+	else if((redirect_type == 1)||(redirect_type == 2) )
 	{	
 		if(redirect_type == 2)
 		{
@@ -41,8 +40,7 @@ void io_redirect(vector<string> cmd_element, int redirect_type,
 
 		dup2(fd1, 1); //output goes to file1
 		
-		pid_t forked_process_id = my_fork(cmd_element);
-		kill(forked_process_id, SIGKILL); //terminate process
+		pid = my_fork(cmd_element, shouldwait);
 
 		close(fd1);
 		dup2(savestd_out, 1); //restore stdout
@@ -51,7 +49,7 @@ void io_redirect(vector<string> cmd_element, int redirect_type,
 
 	//redirect INPUT + OUTPUT
 	// format:  cmd < file1 > file2  or  cmd < file1 >> file2
-	if( (redirect_type == 3) || (redirect_type == 4) )
+	else if( (redirect_type == 3) || (redirect_type == 4) )
 	{
 
 		fd1 = open(f1, O_RDONLY);
@@ -68,14 +66,22 @@ void io_redirect(vector<string> cmd_element, int redirect_type,
 
 		dup2(fd2, 1); // output goes to file2
 
-		pid_t forked_process_id = my_fork(cmd_element);
-		kill(forked_process_id, SIGKILL); //terminate process
+		pid = my_fork(cmd_element, shouldwait);
 
 		close(fd1); 
 		close(fd2); 
 		dup2(savestd_out, 1);
 		dup2(savestd_in, 0);
 
+	}
+
+	if(shouldwait)
+	{
+		return 0;
+	}
+	else
+	{
+		return pid;
 	}
 
 }
