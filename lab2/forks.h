@@ -12,6 +12,7 @@ pid_t my_fork(vector<string> vec, int shouldwait)
 		exit(-1);
 
 	}
+
 	else if(pid == 0)
 	{
 		//child, execute program here
@@ -19,7 +20,8 @@ pid_t my_fork(vector<string> vec, int shouldwait)
 
 		if(  (execv(the_args[0], (char* const*)the_args) == -1)  )
 		{
-			return -1;
+			cerr << "\nError: couldn't find that command\n";
+			exit(-1);
 		}
 	}
 
@@ -28,18 +30,14 @@ pid_t my_fork(vector<string> vec, int shouldwait)
 		if(shouldwait)
 		{
 			wait(NULL);
-			return 0;
 		}
+
 		else
 		{
 			return pid;
 		}
-	
-		cout << "I am parent" << endl;
 
 	}
-
-
 
 }
 

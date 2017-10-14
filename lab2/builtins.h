@@ -159,7 +159,7 @@ void run_builtin(vector<string> v, int which_one, int should_redirect = 0, strin
 			my_cd(v);
 			break;
 		case 2:
-			my_clr();
+			my_clr2();
 			break;
 		case 3:
 			my_dir();

@@ -149,8 +149,10 @@ pid_t eval_args(vector<string> avec)
 			elem1 = split_up(avec, -1, k);
 			elem2 = split_up(avec, 1, k);
 
-			my_pipe(elem1, elem2, shouldwait, which_builtin);
-			break;
+			//my_pipe(elem1, elem2, shouldwait, which_builtin);
+			return forkp(elem1, elem2, shouldwait);
+
+			//break;
 
 		}
 
@@ -269,13 +271,16 @@ pid_t eval_args(vector<string> avec)
 	/* no operator found? not a builtin? must be single program execution*/
 	else if(!flag && !which_builtin)
 	{
-		if ( my_fork(avec, shouldwait) == -1)
+		if(!shouldwait)
 		{
-			cerr << "\nError: command not found\n";
+			my_fork(avec, shouldwait);
+			wait(NULL);
+		} 
+		else
+		{
+			my_fork(avec, shouldwait);
 		}
-		//needs to be error checked
-	} 
-
+	}
 	//return to shell
 }
 
