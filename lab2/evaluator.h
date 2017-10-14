@@ -32,43 +32,6 @@ vector<string> parse_line(string entered)
 }
 
 
-
-/* if builtin: returns int > 0 -> else returns 0*/
-int is_builtin(string s)
-{
-	if(s=="cd")
-	{
-		return 1;
-	}
-	else if( (s=="clr") || (s=="clear") )
-	{
-		return 2;
-	}
-	else if( (s=="ls") || (s=="dir") )
-	{
-		return 3;
-	}
-	else if( (s=="environ") || (s=="env") )
-	{
-		return 4;
-	}
-	else if(s=="echo")
-	{
-		return 5;
-	}
-	else if(s=="help")
-	{
-		return 6;
-	}
-	else
-	{
-		return 0;
-	}
-}
-
-
-
-
 /* returns command element before or after operator */
 vector<string> split_up(vector<string> entire, int position, int index)
 {

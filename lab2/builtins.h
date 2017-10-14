@@ -2,6 +2,40 @@
 //contains all built in functions for myshell
 
 
+/* if builtin: returns int > 0 -> else returns 0*/
+int is_builtin(string s)
+{
+	if(s=="cd")
+	{
+		return 1;
+	}
+	else if( (s=="clr") || (s=="clear") )
+	{
+		return 2;
+	}
+	else if( (s=="ls") || (s=="dir") )
+	{
+		return 3;
+	}
+	else if( (s=="environ") || (s=="env") )
+	{
+		return 4;
+	}
+	else if(s=="echo")
+	{
+		return 5;
+	}
+	else if(s=="help")
+	{
+		return 6;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+
 string my_getcwd()
 {
 	char buff[100];
@@ -112,17 +146,143 @@ void my_echo(vector<string> s)
 }
 
 
+
+int is_valid_help(string s)
+{
+	string a[] = {"1", "2", "3", "4", "5", "6", "7",
+					"cd", "clr", "dir", "ls", "env", "echo", "help"};
+	
+	for(int i = 0; i < 15; i++)
+	{
+		if(a[i]==s)
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+
+
+
+/*displays help manual based on user input*/
 void my_help()
 {
-	//print the manual	
+	my_clr2();
+	int quitmanual = 0, isvalid = 0, found = 0;
+
+	string entered, firstword ="", currentline=" ";
+
+	while(!quitmanual)
+	{
+
+		ifstream manual;
+		manual.open ("readme.txt");
+
+		cout << "Which section of the help manual do you want?:\n\n";
+		cout << "Enter: \n\n";
+		cout << "1 for General Operation\n"
+			 << "2 for Built-In Commands\n"
+			 << "3 for IO Redirection Operators\n"
+			 << "4 for Pipe Operator\n"
+			 << "5 for Background Execution Operator\n"
+			 << "6 for Quitting Shell\n"
+			 << "7 for About\n"
+		
+			 << "OR  The name of a specific builtin\n"
+			
+			 <<	"OR  q to quit\n\n"
+
+		     << "Type here and press enter: ";
+
+		getline(cin, entered);
+
+		//cout << "entered is : " << entered;
+
+		if(entered == "q")
+		{
+			quitmanual = 1;
+		}
+		else if( !is_valid_help(entered) )
+		{
+			my_clr2();
+			cout << "Not a valid help entry.\n"
+				 << "Try again or enter q to quit: ";
+		}
+		else
+		{
+
+			found = 0;
+
+			if(manual.good())
+			{
+				my_clr2();
+
+				if(is_builtin(entered))
+				{
+
+					while(getline(manual, currentline))
+					{
+						stringstream ss(currentline);
+
+						ss >> firstword;
+
+						if(firstword == entered)
+						{
+							cout << endl << currentline << endl;
+							break;
+						}
+					}
+				}
+
+				else
+				{
+					int whitecount = 0, found = 0;
+					while(getline(manual, currentline) && (whitecount < 3))
+					{
+						stringstream ss(currentline);
+
+						ss >> firstword;
+
+						if((firstword == entered) || found)
+						{
+							cout << currentline << endl;
+							found = 1;
+
+							if(currentline.empty())
+							{
+								whitecount++;
+							}
+							else
+							{
+								whitecount = 0;
+							}
+						}
+			
+					}
+				}
+
+			}
+			else
+			{
+				cerr << "error opening manual";
+			} 
+
+			cout << "\npress any key to continue";
+			cin.ignore();
+			my_clr2();
+		}
+	}
+
 }
 
 
 
 
 
-/* runs specified builtin 
-		will redirect output if should_redirect is true. (is false by default)*/
+/* runs a builtin 
+ will redirect output if should_redirect == true(false by default)*/
 void run_builtin(vector<string> v, int which_one, int should_redirect = 0, string filename = "")
 {
 	int saveout, writehere;

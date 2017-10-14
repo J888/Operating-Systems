@@ -1,57 +1,35 @@
 myshell User Manual
 
-** TO QUIT THIS MANUAL, type the letter q **
 
-Contents:
-1. General Operation
-2. Built-In Commands
-3. IO Redirection Operators
-4. Pipe Operator
-5. Background Execution Operator
-6. About
-
-
-1. GENERAL OPERATION
+1 GENERAL OPERATION
 	
-	Type your command into the shell in the format: <cmd> arg#1, arg#2, ..., argn#n
+Type your command into the shell in the format: <cmd> arg#1, arg#2, ..., argn#n
 	
-	When ready to execute, hit ENTER
-
-
-********************************************************
-
-2. BUILT-IN COMMANDS: 
-
-	[These are commands built into the shell]
-
-	- cd <path>		-Change current directory. Must specify path to directory.
+When ready to execute, hit ENTER
 
 
 
-	- clr			-Clear the terminal window of previously entered text
+2 BUILT-IN COMMANDS: 
+
+[These are commands built into the shell]
+
+cd <path>  -Change current directory. Must specify path to directory 
+
+clr  -Clear the terminal window of previously entered text  
+
+ls  -List contents of current directory (files and folders)
+
+dir  -See 'ls'
+
+env 	-List environment variables
+
+echo <input text>  -Prints input text to screen. Note: echo can print environment variables. Must be in format: $VARIABLE
+
+help  -Displays help manual (readme.txt)
 
 
 
-	- dir, ls		-List contents of current directory (files and folders)
-
-
-
-	- env		-List environment variables
-
-
-
-	- echo <input text>		-Prints input text to screen 
-
-		Note: echo can print environment variables. Must be in format: $VARIABLE
-
-
-
-	- help		-Displays help manual (readme.txt)
-
-
-********************************************************
-
-3. IO REDIRECTION OPERATORS
+3 IO REDIRECTION OPERATORS
 
 	[Redirection of Output]
 
@@ -68,7 +46,6 @@ Contents:
 			Note: Output will be written to the end of the file. Previous contents will not be overwritten.
 			Note: If the file does not exist, it will be created.
 
---- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
 	[Redirection of Input]
 
@@ -78,9 +55,6 @@ Contents:
 
 			Note: "<<" is not a valid operator.
 
-
-
---- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
 	[Combination]
 
@@ -93,8 +67,7 @@ Contents:
 
 
 
-********************************************************
-4. PIPE OPERATOR
+4 PIPE OPERATOR
 
 	[Allows execution of two programs at once and communication between programs]
 
@@ -110,9 +83,7 @@ Contents:
 
 
 
-
-********************************************************
-5. BACKGROUND EXECUTION OPERATOR
+5 BACKGROUND EXECUTION OPERATOR
 	
 	[This allows programs to run in the background]
 	Note: Commands built into the shell cannot be run in the background unless they are a part of a pipe. See section 4 for information on pipes. 
@@ -125,19 +96,16 @@ Contents:
 
 
 
-********************************************************
-6. QUIT/EXIT THE SHELL: 
+6 QUIT/EXIT THE SHELL: 
 
 	Type 'quit' or 'exit' and hit ENTER.
 
 
 
-********************************************************
-7. ABOUT 
+7 ABOUT 
 
-
-Class: 3207 Intro. to Systems Programming and Operating Systems
-Project #: 2
+Class: CIS 3207, Introduction to Systems Programming and Operating Systems
+Lab Project 2
 Semester: Fall 2017
 Language: C++
 Name: John Hyland
