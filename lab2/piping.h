@@ -1,3 +1,5 @@
+/* creates the pipe and execs programs. element1 contains the writer program
+	element2 contains the reader program */
 pid_t my_pipe(vector<string> element1, vector<string> element2) 
 {
 	int fd[2];
@@ -71,4 +73,3 @@ pid_t forkp(vector<string> e1, vector<string> e2, int shouldwait)
 
 	}
 }
-

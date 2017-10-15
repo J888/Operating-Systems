@@ -31,74 +31,74 @@ help  -Displays help manual (readme.txt)
 
 3 IO REDIRECTION OPERATORS
 
-	[Redirection of Output]
+[Redirection of Output]
 
-		cmd  >  file	
+cmd  >  file	
 
-		If ">" is the operator between a command and file (see above), the output of the given command or executable will be written to the file. 
-			Note: This will overwrite the contents of the file, starting from the beginning of the file.
-			Note: If the file does not exist, it will be created.
-
-
-		cmd  >>  file	
-
-		If ">>" is the operator between a command and file (see above), the output of the given command will be APPENDED to the file. 
-			Note: Output will be written to the end of the file. Previous contents will not be overwritten.
-			Note: If the file does not exist, it will be created.
+If ">" is the operator between a command and file (see above), the output of the given command or executable will be written to the file. 
+Note: This will overwrite the contents of the file, starting from the beginning of the file.
+Note: If the file does not exist, it will be created.
 
 
-	[Redirection of Input]
+cmd  >>  file	
 
-		cmd  <  file	
-
-		If "<" is the operator between a command and file, the contents of the file will be used as input to the command. 
-
-			Note: "<<" is not a valid operator.
+If ">>" is the operator between a command and file (see above), the output of the given command will be APPENDED to the file. 
+Note: Output will be written to the end of the file. Previous contents will not be overwritten.
+Note: If the file does not exist, it will be created.
 
 
-	[Combination]
+[Redirection of Input]
 
-		Case 1: cmd < file1 > file2  
-		Case 2: cmd < file1 >> file2
+cmd  <  file	
 
-		If "<" and ">" are the operators between a cmd, file, and file, file1 will be used as input to cmd. The output of resulting command execution will be written to file2.
+If "<" is the operator between a command and file, the contents of the file will be used as input to the command. 
 
-			Note: In case 2, the output will be APPENDED to file2. 
+Note: "<<" is not a valid operator.
+
+
+[Combination]
+
+Case 1: cmd < file1 > file2  
+Case 2: cmd < file1 >> file2
+
+If "<" and ">" are the operators between a cmd, file, and file, file1 will be used as input to cmd. The output of resulting command execution will be written to file2.
+
+Note: In case 2, the output will be APPENDED to file2. 
 
 
 
 4 PIPE OPERATOR
 
-	[Allows execution of two programs at once and communication between programs]
+[Allows execution of two programs at once and communication between programs]
 
-	<cmd1> <arguments> | <cmd2> <arguments>
+<cmd1> <arguments> | <cmd2> <arguments>
 
-		The "|" operator between two commands allows cmd2 to receive the output of cmd1.
+The "|" operator between two commands allows cmd2 to receive the output of cmd1.
 
-		cmd1 takes this output as input.
+cmd1 takes this output as input.
 
-			Note: This shell only supports 1 pipe at a time. Using more than a single "|" is invalid. 
-			Note: Combining "|" with IO Redirection operators is invalid for this shell.
-			Note: Using the "&" operator is valid.
+Note: This shell only supports 1 pipe at a time. Using more than a single "|" is invalid. 
+Note: Combining "|" with IO Redirection operators is invalid for this shell.
+Note: Using the "&" operator is valid.
 
 
 
 5 BACKGROUND EXECUTION OPERATOR
 	
-	[This allows programs to run in the background]
-	Note: Commands built into the shell cannot be run in the background unless they are a part of a pipe. See section 4 for information on pipes. 
+[This allows programs to run in the background]
+Note: Commands built into the shell cannot be run in the background unless they are a part of a pipe. See section 4 for information on pipes. 
 
-	<cmd> <arguments> &
+<cmd> <arguments> &
 
-		The "&" operator at the very end of the shell line will allow the given command to run in the background. 
+The "&" operator at the very end of the shell line will allow the given command to run in the background. 
 
-		Upon execution with the ENTER key, the shell will return immediately back to the prompt.
+Upon execution with the ENTER key, the shell will return immediately back to the prompt.
 
 
 
 6 QUIT/EXIT THE SHELL: 
 
-	Type 'quit' or 'exit' and hit ENTER.
+Type 'quit' or 'exit' and hit ENTER.
 
 
 

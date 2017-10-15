@@ -1,5 +1,3 @@
-
-//#include "forks.h"
 /*handles io_redirection for a command and up to 2 files
   file2 is an optional parameter */
 pid_t io_redirect(vector<string> cmd_element, int redirect_type, 

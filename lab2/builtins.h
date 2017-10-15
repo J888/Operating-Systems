@@ -36,6 +36,7 @@ int is_builtin(string s)
 }
 
 
+/* returns current working directory*/
 string my_getcwd()
 {
 	char buff[100];
@@ -49,13 +50,40 @@ string my_getcwd()
 
 
 /* changes current working directory to one specified
-	by user */
+	by user or one directory back with ".." */
 void my_cd(vector<string> s)
 {
-	if ( chdir(s[1].c_str()) < 0 )
+	
+	if(s[1]=="..")
+	{
+		string dirpath = my_getcwd();
+		int l = dirpath.length();
+		string newpath = "";
+
+
+
+		for(int i = l; i > 0; i--)
+		{
+			if(dirpath[i-1]=='/')
+			{
+				newpath = dirpath.substr(0, i);
+				break;
+			}
+		}
+
+		if ( chdir(s[1].c_str()) < 0 )
+		{
+			cerr << "cd failed: could not go back a directory\n";
+		}	
+	
+	}
+
+	else if ( chdir(s[1].c_str()) < 0 )
 	{
 		cerr << "cd failed: directory not found\n";
 	}	
+
+
 }
 
 
@@ -91,6 +119,7 @@ void my_dir()
 }
 
 
+
 /* prints all environment variables to screen */
 void my_env()
 {
@@ -102,6 +131,8 @@ void my_env()
 
 	}
 }
+
+
 
 
 /* prints env variable 'env_var' */
@@ -118,6 +149,8 @@ char* my_getenv(string env_var)
 		return the_var;
 	}
 }
+
+
 
 
 /* prints everything after "echo" command to screen 
@@ -147,6 +180,8 @@ void my_echo(vector<string> s)
 
 
 
+
+/* returns 1 if the string is a valid part of the help manual*/
 int is_valid_help(string s)
 {
 	string a[] = {"1", "2", "3", "4", "5", "6", "7",

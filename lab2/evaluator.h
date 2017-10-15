@@ -1,7 +1,7 @@
 /* evaluator.h
- 
 Contains functions for parsing + evaluating shell commands*/
 
+/* pushes the elements of the line into a vector of strings*/
 vector<string> parse_line(string entered)
 {
 
@@ -103,20 +103,29 @@ pid_t eval_args(vector<string> avec)
 
 	for(int k = 0;  k < avec.size(); k++)
 	{
+		if(avec.size()==1)
+		{
+		
+			cerr << "Operator must be surrounded by executable commands or files\n";
+		}
 
-		if(avec[k] == "|") 
+		else if(avec[k] == "|") 
 		{ // PIPE
 
 			flag = 1; 
 
 			elem1 = split_up(avec, -1, k);
 			elem2 = split_up(avec, 1, k);
-
-			//my_pipe(elem1, elem2, shouldwait, which_builtin);
-			return forkp(elem1, elem2, shouldwait);
-
-			//break;
-
+			
+			if(which_builtin)
+			{
+				cerr << "Error: cannot pipe between builtins\n";
+				return 0;
+			}
+			else
+			{
+				return forkp(elem1, elem2, shouldwait);
+			}
 		}
 
 		else if(    (avec[k]   == "<") 
@@ -127,9 +136,7 @@ pid_t eval_args(vector<string> avec)
 			file1name = avec[k+1];
 			file2name = avec[k+3];
 
-			io_redirect(elem1, 3, shouldwait, file1name, file2name);
-			break;
-
+			return io_redirect(elem1, 3, shouldwait, file1name, file2name);
 		}
 
 		else if(    (avec[k]   == "<" )
@@ -139,9 +146,8 @@ pid_t eval_args(vector<string> avec)
 			file1name = avec[k+1];
 			file2name = avec[k+3];
 
-			io_redirect(elem1, 4, shouldwait, file1name, file2name);
-			break;
-
+			return io_redirect(elem1, 4, shouldwait, file1name, file2name);
+	
 		}
 
 		else if(avec[k] == "<")
@@ -151,8 +157,8 @@ pid_t eval_args(vector<string> avec)
 			elem1 = split_up(avec, -1, k);
 			file1name = avec[k+1];
 
-			io_redirect(elem1, 0, shouldwait, file1name);
-			break;
+			return io_redirect(elem1, 0, shouldwait, file1name);
+		
 		}
 
 		else if(avec[k] == ">")
@@ -167,8 +173,8 @@ pid_t eval_args(vector<string> avec)
 			{
 				flag = 1;
 			
-				io_redirect(elem1, 1, shouldwait, file1name);
-				break;
+				return io_redirect(elem1, 1, shouldwait, file1name);
+	
 			}
 			else
 			{
@@ -188,8 +194,8 @@ pid_t eval_args(vector<string> avec)
 			{
 	
 				flag = 1;
-				io_redirect(elem1, 2, shouldwait, file1name);
-				break;
+				return io_redirect(elem1, 2, shouldwait, file1name);
+			
 			}
 			else
 			{
@@ -202,10 +208,9 @@ pid_t eval_args(vector<string> avec)
 	} //End loop
 
 
-
 	if(!flag && which_builtin) //call builtin standalone 
 	{
-		run_builtin(avec, which_builtin);;
+		run_builtin(avec, which_builtin);
 	}
 
 	else if(flag == 2) //call builtin + redirect stdout
@@ -224,6 +229,7 @@ pid_t eval_args(vector<string> avec)
 		if( (which_builtin == 1) || (which_builtin == 2) )
 		{
 			cerr << "\nError\ncannot redirect output of command\n";
+
 		}
 		else
 		{
@@ -241,9 +247,10 @@ pid_t eval_args(vector<string> avec)
 		} 
 		else
 		{
-			my_fork(avec, shouldwait);
+			return my_fork(avec, shouldwait);
 		}
 	}
+
+	return(0);
 	//return to shell
 }
-

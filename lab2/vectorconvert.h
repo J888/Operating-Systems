@@ -1,5 +1,5 @@
 /*converts vector of strings into an array of 
-const char*s */
+const char*s and returns the array */
 const char** convert_vector(vector<string> s)
 {
 
@@ -21,4 +21,3 @@ const char** convert_vector(vector<string> s)
 	return argv;
 
 }
-

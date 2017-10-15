@@ -19,6 +19,28 @@ using namespace std;
 #include "ioredirect.h"
 #include "evaluator.h"
 
+
+/*ABSTRACT of approach:
+
+The purpose of this lab was to write a basic shell program to parse user input and execute 
+the appropriate functions or programs. I chose to do so in C++.
+
+The first step in creating a functional shell was to evaluate user input. To do so,
+I made a function called eval_args (evaluator.h). The function parses each element
+of the input and places each into a vector of strings object. 
+
+Depending on the input, the string vector is fed into various other functions, including 
+built in functions. Built ins do not require creating a new process. If ioredirection or pipe
+operators are entered, functions in piping.h or forks.h are called.
+
+The shell has limits, such as the inability to create more than 1 pipe, and the
+inability to combine the pipe and iorediretion operatiors. 
+
+However, the result of finishing this project is that the shell can do most basic operations.
+
+ */
+
+
 int main(int argc, char *argv[])
 {
 	vector<pid_t> all_zombies;	
