@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <cstdlib>
 
 using namespace std;
 
@@ -43,8 +44,11 @@ However, the result of finishing this project is that the shell can do most basi
 
 int main(int argc, char *argv[])
 {
-	vector<pid_t> all_zombies;	
 	
+	string x = my_getcwd(), y = "/myshell", z;
+	z = x + y;
+	setenv("shell", z.c_str(), true);
+
 	pid_t previouspid, processid;
 
 	string the_line;
