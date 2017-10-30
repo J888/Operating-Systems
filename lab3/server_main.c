@@ -195,7 +195,7 @@ void sbuf_insert(sbuf_t *sp, int item)
 int sbuf_remove(sbuf_t *sp)
 {
    int item;
-   sem_wait(&sp->items);
+   sem_wait(&sp->items); //decrement # of available sockets to read from
 
    //Start critical section 
    sem_wait(&sp->mutex); //LOCK  - P()
@@ -203,8 +203,8 @@ int sbuf_remove(sbuf_t *sp)
    sem_post(&sp->mutex); //UNLOCK - V()
    //End critical section
 
-   sem_post(&sp->empty_slots); 
-   return item;
+   sem_post(&sp->empty_slots); //removed, empty_slots+=1
+   return item; // return so the thread knows what to work on
 }
 
 
