@@ -8,19 +8,22 @@
 #include <unistd.h>
 
 #define DEFAULT_DICTIONARY "default_dict.txt"
-#define DEFAULT_PORT 1000
+#define DEFAULT_PORT 12001
 #define NUMWORDS 10000
 #define WORDSIZE 50
-#define NUM_WORKERS 20
+#define NUM_WORKERS 4
+
+int array_buff = NUMWORDS;
 
 typedef struct 
 {
 	int *queue;
 	char ** dictionary;
-	int num_words_in_dictionary;
+	int num_words_dict;
 	int max_capacity;
 	int front;
 	int rear;
+	int serviceable;
 	sem_t mutex; // the lock
 	sem_t empty_slots; //  how many empty spots in queue
 	sem_t items; // how many sockets in queue
@@ -35,8 +38,9 @@ void sbuf_deinit(sbuf_t *sp);
 void sbuf_insert(sbuf_t *sp, int item);
 int  sbuf_remove(sbuf_t *sp);
 
-int spellcheck (char* word, char** dictionary_array);
-int service_client(char* wordsequence, char ** dictionary_array);
+int service_message(char * message, int socket);
+int check_word_spell(char * word, int socket, int onlastword);
+
 
 void *thread_routine(void* args);
 
@@ -44,34 +48,35 @@ void *thread_routine(void* args);
 int main(int argc, char *argv[])
 {
 	/* import the dictionary and place it into an array */
-	char * dict_fname;
+	char * dict_filename;
 	int port;
 
 	if(argc > 2)
 	{
-		dict_fname = argv[1];
+		dict_filename = argv[1];
 		port = strtol(argv[2], NULL, 10);
 	}
 	else 
 	{
-		dict_fname = DEFAULT_DICTIONARY;
+		dict_filename = DEFAULT_DICTIONARY;
 		port = DEFAULT_PORT;
 	}
 
 
-	//initialize the work queue
-	sbuf_init(&workqueue, 20);
+	//initialize dictionary
+	sbuf_init_dictionary(&workqueue, dict_filename);
+
+	//initialize work queue
+	sbuf_init_queue(&workqueue, 20);
 
 
-	//create the worker threads
+	//create worker threads
 	pthread_t tid;
 	for(int t = 0; t < NUM_WORKERS; t++)
 	{
-		pthread_create(&tid, NULL, thread_routine, dictionary_arr);
+		pthread_create(&tid, NULL, thread_routine, NULL);
 	}
 
-
-	
 	int socketdesc, newsocketdesc, c;
 	struct sockaddr_in server, client;
 
@@ -102,18 +107,21 @@ int main(int argc, char *argv[])
 		//accept connections
 		newsocketdesc = accept(socketdesc, (struct sockaddr *)&client, (socklen_t*)&c); 
 
+		if(newsocketdesc==-1){printf("error accepting");}
 		//add new socket to the queue
+		printf("got here before instert\n");
 		sbuf_insert(&workqueue, newsocketdesc);
+		printf("got here after instert\n");
 		// threads now have work
 
 	}
 
-	return 0;
+	//return 0;
 }
 
 
 //initialize global struct
-void sbuf_init(sbuf_t *sp, int nslots)
+void sbuf_init_queue(sbuf_t *sp, int nslots)
 {
 	sp->queue = calloc(nslots, sizeof(int));
 
@@ -121,25 +129,29 @@ void sbuf_init(sbuf_t *sp, int nslots)
 
 	sp->front = sp->rear = 0;
 
+	sp->serviceable = 0;
+
 	sem_init(&sp->mutex, 0, 1); 
 	sem_init(&sp->empty_slots, 0, nslots); 
 	sem_init(&sp->items, 0, 0);
 
 }
 
-void subuf_init_dictionary(sbuf_t *sp, char * filename)
+void sbuf_init_dictionary(sbuf_t *sp, char * filename)
 {
 	FILE *dictfp = fopen(filename, "r");
 
 	if(dictfp==NULL)
 	{
 		fprintf(stderr, "Error opening file: %s\n", filename);
-		return -1;
+		
 	}
 
 	char *word;
 	ssize_t nread;
 	size_t len = 0;
+
+	sp->num_words_dict = NUMWORDS;
 
 	sp->dictionary = malloc(sizeof(char*)*NUMWORDS);
 
@@ -149,7 +161,7 @@ void subuf_init_dictionary(sbuf_t *sp, char * filename)
 	}
 
 
-	int array_buff = NUMWORDS, x = 0;
+	int x = 0;
 	
 	while((nread = getline(&word, &len, dictfp)) != -1)
 	{
@@ -157,6 +169,7 @@ void subuf_init_dictionary(sbuf_t *sp, char * filename)
 		if(x == array_buff)
 		{
 			array_buff+=1000; //increase buffer
+			sp->num_words_dict+=1000;
 
 			sp->dictionary = realloc(sp->dictionary, sizeof(char*)*(array_buff)); // make some more room for additional words
 			
@@ -166,7 +179,7 @@ void subuf_init_dictionary(sbuf_t *sp, char * filename)
 			}
 		}
 
-		strcpy(d_arr[x], word);
+		strcpy(sp->dictionary[x], word);
 
 		x++;
 
@@ -175,7 +188,7 @@ void subuf_init_dictionary(sbuf_t *sp, char * filename)
 }
 
 
-//free global struct
+//free global struct of dynamic allocated memory
 void sbuf_deinit(sbuf_t *sp)
 {
 	free(sp->queue);
@@ -190,14 +203,18 @@ void sbuf_insert(sbuf_t *sp, int item)
 	
 	//space found, decrement empty_slots and proceed to crit section
 
+
 	//Start critical section
 	sem_wait(&sp->mutex); //LOCK the queue - P()
 	sp->queue[(++sp->rear)%(sp->max_capacity)] = item;
+	printf("I get here");
+	sp->serviceable++;
 	sem_post(&sp->mutex); //UNLOCK the queue - V()
 	//End critical section
 
 	sem_post(&sp->items); // increment serviceable items since we added an item (socket)
-}
+	sp->serviceable++;
+}	
 
 
 //removes socket from global queue, updates global struct
@@ -209,6 +226,7 @@ int sbuf_remove(sbuf_t *sp)
    //Start critical section 
    sem_wait(&sp->mutex); //LOCK  - P()
    socket = sp->queue[(++sp->front)%(sp->max_capacity)]; //removes the socket
+   sp->serviceable--;
    sem_post(&sp->mutex); //UNLOCK - V()
    //End critical section
 
@@ -218,64 +236,122 @@ int sbuf_remove(sbuf_t *sp)
 
 
 //parses the message into words
-int check_message_spell(char * message, char ** dict)
+int service_message(char * message, int socket)
 {	
-	char *token = strtok(message, " ");
-	check_word_spell(token, dict);
 
-	while(token!=NULL)
-	{
-		token = strtok(NULL, " ");
-		check_word_spell(token, dict);
-	}
-}
+	char temp[50] = "";
+	
+	int i = 0, j = 0;
 
-//checks spelling of one word by seeing if in dict array
-int write_back_results(char * word, char ** dict)
-{
-	for(int j = 0; j  <  ; j++)
+	int len = (int)strlen(message);
+
+	while( i < len )
 	{
-		if( strcmp(dict[j], word) != 0 )
+
+		if(i >= len-1)
 		{
-			printf("%s OK\n", word);
+			//at the last character of last word
+			temp[j]=message[i];
+			temp[j+1]='\0';
+			check_word_spell(temp, socket, 1);
 			break;
+		}
+
+		else if(message[i+1]==' ')
+		{
+			temp[j]=message[i];
+			temp[j+1]='\0';
+			check_word_spell(temp, socket, 0);
+			j=0;
+			i+=2;
 		}
 		else
 		{
-			printf("%s MISSPELLED\n", word);
+			temp[j] = message[i]; 
+			j++; 
+			i++;
+		}
+
+
+	}
+		
+
+}
+
+//checks spelling of one word by seeing if in dict array
+int check_word_spell(char * word, int socket, int onlastword)
+{
+	int spelling_correct = 0;
+	int len=(int)strlen(word);
+
+	if(onlastword){
+		word[len-2]='\0';
+	}
+	
+	
+	len=(int)strlen(word);
+	printf("new length of my word: %d\n", len);
+
+
+
+	for(int j = 0; j  < array_buff ; j++)
+	{
+		printf("value of j through loop:%d\n",j);
+		printf("current dict word:%s\n",workqueue.dictionary[j]);
+		printf("current my word:%s\n",word);
+		if( strncmp(workqueue.dictionary[j], word, len) == 0 )
+		{
+			spelling_correct = 1;
 			break;
 		}
+		else{
+			int r = strncmp(workqueue.dictionary[j], word, len);
+			printf("result of comparison: %d\n",r );
+		}
+		if(j==1100){break;}
 	}
+
+	char newmessage[110] ="";
+	strcpy(newmessage, word);
+
+	if(spelling_correct)
+	{
+		strcat(newmessage, " OK\n");
+
+	} else { strcat(newmessage, " MISSPELLED\n"); }
+
+	send( socket, newmessage, strlen(newmessage), 0);
 }
 
 
-/* what all worker threads do */
-void *thread_routine(void* arg) //what do i put for the args
+/* worker thread routine */
+void *thread_routine(void* arg) 
 {
 	int socket_to_service;
 	char message[2000];
-	char ** dictionary = arg;
 
 	while(1)
 	{
-		while( workqueue->items ) //while work queue not empty
+
+		while(workqueue.serviceable) //while work queue not empty
 		{
+
 			//take a socket from global queue
 			socket_to_service = sbuf_remove( &workqueue );
 
 			//read the message
-			if(read(socket_to_service, message, 2000) < 0)
+			if(recv(socket_to_service, message, 2000, 0) < 0)
 			{
 				fprintf(stderr, "message read failed\n");
-				return -1;
+		
 			}
 
-			check_message_spell(message, dictionary_array); 
+			service_message(message, socket_to_service); 
 
 			if(close(socket_to_service) < 0)//close the socket
 			{
 				fprintf(stderr, "close socket descriptor failed\n");
-				return -1;
+			
 			}
 		}
 	}
