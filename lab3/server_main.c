@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <pthread.h>
@@ -25,7 +26,11 @@ typedef struct
 	int rear;
 	int serviceable;
 	sem_t mutex; // the lock
-	sem_t empty_slots; //  how many empty spots in queue
+
+	/*how many empty spots in queue.
+	sbuf_insert uses it to wait before inserting socket*/
+	sem_t empty_slots; 
+
 	sem_t items; // how many sockets in queue
 
 } sbuf_t;
@@ -47,6 +52,8 @@ void *thread_routine(void* args);
 
 int main(int argc, char *argv[])
 {
+	printf("Spellcheck server started\n");
+
 	/* import the dictionary and place it into an array */
 	char * dict_filename;
 	int port;
@@ -108,15 +115,12 @@ int main(int argc, char *argv[])
 		newsocketdesc = accept(socketdesc, (struct sockaddr *)&client, (socklen_t*)&c); 
 
 		if(newsocketdesc==-1){printf("error accepting");}
+		
 		//add new socket to the queue
-		printf("got here before instert\n");
 		sbuf_insert(&workqueue, newsocketdesc);
-		printf("got here after instert\n");
 		// threads now have work
-
 	}
-
-	//return 0;
+	return 0;
 }
 
 
@@ -206,14 +210,17 @@ void sbuf_insert(sbuf_t *sp, int item)
 
 	//Start critical section
 	sem_wait(&sp->mutex); //LOCK the queue - P()
-	sp->queue[(++sp->rear)%(sp->max_capacity)] = item;
-	printf("I get here");
-	sp->serviceable++;
+	sp->queue[(++sp->rear)%(sp->max_capacity)] = item; //add socket to queue
+
+	/* let threads know their is work to be done (they are in an endless loop
+	checking for sp->serviceable to be 1 or greater*/
+	sp->serviceable++; 
+
 	sem_post(&sp->mutex); //UNLOCK the queue - V()
 	//End critical section
 
 	sem_post(&sp->items); // increment serviceable items since we added an item (socket)
-	sp->serviceable++;
+
 }	
 
 
@@ -226,7 +233,7 @@ int sbuf_remove(sbuf_t *sp)
    //Start critical section 
    sem_wait(&sp->mutex); //LOCK  - P()
    socket = sp->queue[(++sp->front)%(sp->max_capacity)]; //removes the socket
-   sp->serviceable--;
+   sp->serviceable--; //let threads know that there is 1 less thing to be done
    sem_post(&sp->mutex); //UNLOCK - V()
    //End critical section
 
@@ -235,7 +242,8 @@ int sbuf_remove(sbuf_t *sp)
 }
 
 
-//parses the message into words
+//parses the message into words, calls check_word_spell
+// to check each word individually
 int service_message(char * message, int socket)
 {	
 
@@ -288,29 +296,33 @@ int check_word_spell(char * word, int socket, int onlastword)
 		word[len-2]='\0';
 	}
 	
-	
 	len=(int)strlen(word);
-	printf("new length of my word: %d\n", len);
 
+	//make copy of word with first letter UPPERcase
+	char wordcopy_uppercase[50];
+	strcpy(wordcopy_uppercase, word);
+	wordcopy_uppercase[0] = toupper(wordcopy_uppercase[0]);
 
+	//make copy of word with first letter LOWERcase
+	char wordcopy_lowercase[50];
+	strcpy(wordcopy_lowercase, word);
+	wordcopy_lowercase[0] = tolower(wordcopy_lowercase[0]);
 
+	//loop through the dictionary, compare dictionary word to:
+	//  word uppercase, word lowercase. 
+	// (makes comparison case insensitive to the first letter of word)
 	for(int j = 0; j  < array_buff ; j++)
 	{
-		printf("value of j through loop:%d\n",j);
-		printf("current dict word:%s\n",workqueue.dictionary[j]);
-		printf("current my word:%s\n",word);
-		if( strncmp(workqueue.dictionary[j], word, len) == 0 )
+		if( (strncmp(workqueue.dictionary[j], wordcopy_uppercase, len) == 0) ||
+			(strncmp(workqueue.dictionary[j], wordcopy_lowercase, len) == 0)  )
 		{
 			spelling_correct = 1;
 			break;
 		}
-		else{
-			int r = strncmp(workqueue.dictionary[j], word, len);
-			printf("result of comparison: %d\n",r );
-		}
-		if(j==1100){break;}
+		
 	}
 
+	//concatenate word + OK or MISSPELLED
 	char newmessage[110] ="";
 	strcpy(newmessage, word);
 
@@ -320,15 +332,16 @@ int check_word_spell(char * word, int socket, int onlastword)
 
 	} else { strcat(newmessage, " MISSPELLED\n"); }
 
+	//send the concatentated message back
 	send( socket, newmessage, strlen(newmessage), 0);
 }
 
 
-/* worker thread routine */
+/* worker thread routine to service new clients*/
 void *thread_routine(void* arg) 
 {
 	int socket_to_service;
-	char message[2000];
+	char message[2000] = "";
 
 	while(1)
 	{
@@ -339,23 +352,34 @@ void *thread_routine(void* arg)
 			//take a socket from global queue
 			socket_to_service = sbuf_remove( &workqueue );
 
-			//read the message
-			if(recv(socket_to_service, message, 2000, 0) < 0)
+			//keep reading until client terminates
+			while(recv(socket_to_service, message, 2000, 0) > 0)
 			{
-				fprintf(stderr, "message read failed\n");
+				if((int)strlen(message)<=2) //typing nothing and hitting enter is invalid
+				{
+					strcpy(message, "invalid input\n");
+					send(socket_to_service, message, strlen(message), 0);
+				}
+				else
+				{
+					printf("Servicing message: %s\n",message);
+					service_message(message, socket_to_service); //spellcheck the message
+				}
 		
+				memset(message, 0, sizeof(message)); //reset message
 			}
 
-			service_message(message, socket_to_service); 
+			printf("Connection to client was terminated. Closing socket\n");
 
 			if(close(socket_to_service) < 0)//close the socket
 			{
 				fprintf(stderr, "close socket descriptor failed\n");
-			
+			}
+			else
+			{
+				printf("Socket closed\n");
 			}
 		}
 	}
 }
-
-
 
