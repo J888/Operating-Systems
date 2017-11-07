@@ -4,7 +4,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <pthread.h>
-#include <semaphore.h> //968
+#include <semaphore.h> 
 #include <arpa/inet.h>
 #include <unistd.h>
 
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 		sbuf_insert(&workqueue, newsocketdesc);
 		// threads now have work
 	}
-	return 0;
+	
 }
 
 
@@ -141,6 +141,8 @@ void sbuf_init_queue(sbuf_t *sp, int nslots)
 
 }
 
+
+/* reads dictionary into the sbuf_t global struct*/
 void sbuf_init_dictionary(sbuf_t *sp, char * filename)
 {
 	FILE *dictfp = fopen(filename, "r");
@@ -382,4 +384,3 @@ void *thread_routine(void* arg)
 		}
 	}
 }
-
