@@ -58,19 +58,7 @@ int format_drive()
 {
 	int z = 0x00;
 	seek_block_from_start(0);
-	fwrite(&z, 1, BLOCK_SIZE_BYTES, drive_fp);
-	
-	for(int i = 0; i<FAT_BLOCK_COUNT-1; i++)
-	{
-		fwrite(&z, 1, BLOCK_SIZE_BYTES, drive_fp);
-		seek_block_from_current(1);
-	}
-
-	fseek to the Root Directory, set all bytes = 0x00;
-	if success
-		return 1;
-	else
-		return -1;
+	fwrite(&z, BLOCKS_ON_DISK, BLOCK_SIZE_BYTES, drive_fp);
 }
 
 
@@ -296,6 +284,7 @@ int update_rootdir(int firstFATblock, int type, char * path , char * filename, i
 		if(path!=NULL)
 		{
 			parse the path;
+
 			navigate FILE stream to the correct RD entry;
 			write_metadata() there;
 		}
