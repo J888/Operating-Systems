@@ -35,7 +35,7 @@
 /*Function prototypes will go here */
 
 /* - GLOBALS -*/
-FILE * drive_fp; //File stream to the “drive” file
+FILE * fp; //File stream to the “drive” file
 int drive_position = 0; //keeps track of position within the drive (when needed)
 
 
@@ -61,8 +61,13 @@ int format_drive()
 {
 	int z = 0x00;
 	seek_block_from_start(0);
-	fwrite(&z, BLOCKS_ON_DISK, BLOCK_SIZE_BYTES, drive_fp);
+	fwrite(&z, BLOCKS_ON_DISK, BLOCK_SIZE_BYTES, fp);
 }
+
+
+
+
+
 
 
 /* PURPOSE: create a file or directory within the file system, if it doesn't exist already
@@ -76,8 +81,12 @@ int create_file(int type, int bytes, char* pathname, char* filename)
 		return -1;
 	}
 
-	seek_block_from_start(FAT_FIRST_BLOCK); // point to start of FAT
+
+
+	rewind(fp) // point to start of FAT
 	drive_position = 0; //reset counter
+
+
 	int FATentry = FAT_next_empty(); // get next empty space in FAT 
 
 	//update the ROOT DIRECTORY, location of first block gets stored there (not in FAT)
@@ -114,8 +123,8 @@ int create_file(int type, int bytes, char* pathname, char* filename)
 			}
 			else
 			{
-				FAT_fp_prev = drive_fp; // save PREVIOUS space
-				FATentry = FAT_next_empty(); // find NEXT space, advances drive_fp
+				FAT_fp_prev = fp; // save PREVIOUS space
+				FATentry = FAT_next_empty(); // find NEXT space, advances fp
 				if(FATentry==-1)
 				{ 
 					print error message
@@ -132,6 +141,11 @@ int create_file(int type, int bytes, char* pathname, char* filename)
 
 	return 1;
 }
+
+
+
+
+
 
 
 /* 	PURPOSE: deletes a file
@@ -179,7 +193,7 @@ int open_file(filename, pathname, etc.)
 RETURNS: 1 on success, -1 on fail*/
 int close_file()
 {	
-	set drive_fp FILE stream pointer back to the beginning of the drive
+	set fp FILE stream pointer back to the beginning of the drive
 	by doing a call to fseek();
 }
 
@@ -200,7 +214,7 @@ int write_to_file(filename, path, etc., char * data)
 //wrapper function for fseek that goes to block# blocknum from very start of the drive
 int seek_block_from_start(int blocknum)
 {
-	fseek(drive_fp, (blocknum * 512), SEEK_SET);
+	fseek(fp, (blocknum * 512), SEEK_SET);
 	return 1;
 }
 
@@ -213,7 +227,7 @@ int seek_block_from_current(int blocknum)
 		return -1;
 	}
 
-	fseek(drive_fp, (blocknum * 512), SEEK_CUR);
+	fseek(fp, (blocknum * 512), SEEK_CUR);
 	return 1;
 }
 
@@ -226,13 +240,13 @@ int FAT_next_empty()
 	int x = 1;
 	int position_in_fat;
 
-	fread(&x, 2, 1, drive_fp); // read 2 bytes from location of drive_fp
+	fread(&x, 2, 1, fp); // read 2 bytes from location of fp
 
 	while( (x!=0x0000) && !(drive_position>=FAT_BLOCK_COUNT*512) ) // will stop if empty found or end of the FAT reached
 	{	
 		drive_position+=2; //keep track of where we are in FAT (in BYTES)
-		fseek(drive_fp, 2, SEEK_CUR); // point drive_fp 2 bytes ahead
-		fread(&x, 2, 1, drive_fp); // read 2 bytes
+		fseek(fp, 2, SEEK_CUR); // point fp 2 bytes ahead
+		fread(&x, 2, 1, fp); // read 2 bytes
 	}
 	if(x == 0x0000)
 	{
@@ -304,9 +318,11 @@ int update_rootdir(int firstFATblock, int type, char * path , char * filename, c
 	
 	if(option == 1) //adding file
 	{
-		if(path!=NULL)
+		if(path!=NULL) 
 		{
-			parse the path;
+			//parse the path
+
+
 
 			navigate FILE stream to the correct RD entry;
 			write_metadata();
@@ -327,6 +343,10 @@ int update_rootdir(int firstFATblock, int type, char * path , char * filename, c
 
 }
 
+
+Char ** parse_path()
+
+
 /* PURPOSE: Writes the metadata bytes
 Assumes that pointer is already at correct place */
 int write_metadata(int type, int firstFATblock, char * filename, char * extension, int filesize)
@@ -336,18 +356,18 @@ int write_metadata(int type, int firstFATblock, char * filename, char * extensio
 	long date = (long)time(NULL);
 
 	//write the metadata	
-	fwrite(&filename, 8, 1, drive_fp); 
-	fseek(drive_fp, 8, SEEK_CUR);   	
-	fwrite(&extension, 3, 1, drive_fp); 
-	fseek(drive_fp, 3, SEEK_CUR); 
-	fwrite(&date, 8, 1, drive_fp);
-	fseek(drive_fp, 8, SEEK_CUR);
-	fwrite(&date, 8, 1, drive_fp);
-	fseek(drive_fp, 8, SEEK_CUR);
-	fwrite(&firstFATblock, 2, 1, drive_fp);
-	fseek(drive_fp, 2, SEEK_CUR);
-	fwrite(&filesize, 2, 1, drive_fp);
-	fseek(drive_fp, 2, SEEK_CUR);
-	fwrite(&type, 1, 1, drive_fp);
+	fwrite(filename, 8, 1, fp);      //filename
+	fseek(fp, 8, SEEK_CUR);   	
+	fwrite(extension, 3, 1, fp); 	//extension
+	fseek(fp, 3, SEEK_CUR); 			
+	fwrite(date, 8, 1, fp);			//date created
+	fseek(fp, 8, SEEK_CUR);			
+	fwrite(date, 8, 1, fp);			//date modified
+	fseek(fp, 8, SEEK_CUR);
+	fwrite(firstFATblock, 2, 1, fp); //first fat block
+	fseek(fp, 2, SEEK_CUR); 			
+	fwrite(filesize, 2, 1, fp);		//filesize
+	fseek(fp, 2, SEEK_CUR);
+	fwrite(type, 1, 1, fp);			//filetype
 
 }
