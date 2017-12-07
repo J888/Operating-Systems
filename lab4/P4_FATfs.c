@@ -1,4 +1,4 @@
---/* John Hyland - CIS 3207 - Project 4a - Pseudocode for File System Lab */
+/* John Hyland - CIS 3207 - Project 4a - Pseudocode for File System Lab */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,10 +24,13 @@
 	#define OFFSET_DATEMODIFIED 19
 	#define OFFSET_FAT_START 27 
 	#define OFFSET_SIZE 29
-	#define OFFSET_TYPE 31
+	#define OFFSET_TYPE 31	
 #define DATA_BLOCK_COUNT 9216
 #define DATA_START_BLOCK 548
 #define DATA_END_BLOCK   9764
+
+#define FOLDER 0
+#define FILE 1
 
 /*Function prototypes will go here */
 
@@ -64,8 +67,14 @@ int format_drive()
 
 /* PURPOSE: create a file or directory within the file system, if it doesn't exist already
 RETURNS: pointer to file descriptor. If it already exists, return -1 */
-int create_file(int type, int size_in_bytes, char* pathname, char* filename) 
+int create_file(int type, int bytes, char* pathname, char* filename) 
 {
+
+	if( (type==FOLDER) && bytes!=NULL)
+	{
+		fprintf(stderr, "If type is FOLDER, then bytes param should be NULL\n");
+		return -1;
+	}
 
 	seek_block_from_start(FAT_FIRST_BLOCK); // point to start of FAT
 	drive_position = 0; //reset counter
@@ -89,7 +98,7 @@ int create_file(int type, int size_in_bytes, char* pathname, char* filename)
 	}
 
 
-	if(!type==file)
+	if(type==FILE) // Link blocks in the FAT
 	{
 
 
@@ -101,7 +110,7 @@ int create_file(int type, int size_in_bytes, char* pathname, char* filename)
 			if(i == blocks-1)
 			{	
 				fwrite(&final, 2, 1, FAT_fp_prev); // last block, so insert 0xFFFF
-				break;
+				break; // exit the loop
 			}
 			else
 			{
@@ -119,7 +128,7 @@ int create_file(int type, int size_in_bytes, char* pathname, char* filename)
 
 			}
 		}
-	}
+	} 
 
 	return 1;
 }
@@ -127,7 +136,7 @@ int create_file(int type, int size_in_bytes, char* pathname, char* filename)
 
 /* 	PURPOSE: deletes a file
 RETURNS: pointer to file descriptor. If it doesn't exist, return NULL */
-delete_file(filename, path, first FAT block, etc.)
+int delete_file(filename, path, first FAT block, etc.)
 {
 
 	int saveFirstFAT = search_rootdir(filename, path, etc);
@@ -245,7 +254,21 @@ int search_rootdir(int type, char * path, char * filename){
 
 	if(path!=NULL && filename!=NULL) //searching for a file in path
 	{
-		parse the path and break it up into parts;
+		//parse the path and break it up into parts;
+		char * tok;
+		tok = strtok(path, "/");
+		printf("%s\n", tok);
+		while(tok!=NULL)
+		{
+			tok = strtok(NULL, "/");
+			if(tok!=NULL) {
+				printf("%s\n", tok);
+			}
+		} 
+
+
+
+
 		find the entry for the deepest subdirectory in the path;
 		find the file within the entry;
 			if (nothing found)
@@ -275,7 +298,7 @@ int search_rootdir(int type, char * path, char * filename){
 
 /* PURPOSE: Creates a root directory entry with metadata
 RETURNS: 1 on success, -1 on failure */
-int update_rootdir(int firstFATblock, int type, char * path , char * filename, int option)
+int update_rootdir(int firstFATblock, int type, char * path , char * filename, char * extension, int option)
 {
 	seek_block_from_start(ROOTDIR_FIRST_BLOCK); // point to root directory start
 	
@@ -286,12 +309,12 @@ int update_rootdir(int firstFATblock, int type, char * path , char * filename, i
 			parse the path;
 
 			navigate FILE stream to the correct RD entry;
-			write_metadata() there;
+			write_metadata();
 		}
-		else
+		else // no path provided so this goes in root
 		{
 			Find the first free block in the Root Directory;
-			write_metadata() there;
+			write_metadata(type, firstFATblock, filename, extension);
 		}
 		
 
@@ -306,19 +329,25 @@ int update_rootdir(int firstFATblock, int type, char * path , char * filename, i
 
 /* PURPOSE: Writes the metadata bytes
 Assumes that pointer is already at correct place */
-int write_metadata(int type, int firstFATblock, char * name, char * extension, int filesize, int modified)
+int write_metadata(int type, int firstFATblock, char * filename, char * extension, int filesize)
 {
-	
-	fwrite(the file name);
-	fwrite(the file extension);
-	fwrite(date created);
-	if(modified)
-		fwrite(date modified);
-	else
-		fwrite(same date as date created);
-	fwrite(first fat block);
-	fwrite(file size in bytes);
+
+	//get current date as long
+	long date = (long)time(NULL);
+
+	//write the metadata	
+	fwrite(&filename, 8, 1, drive_fp); 
+	fseek(drive_fp, 8, SEEK_CUR);   	
+	fwrite(&extension, 3, 1, drive_fp); 
+	fseek(drive_fp, 3, SEEK_CUR); 
+	fwrite(&date, 8, 1, drive_fp);
+	fseek(drive_fp, 8, SEEK_CUR);
+	fwrite(&date, 8, 1, drive_fp);
+	fseek(drive_fp, 8, SEEK_CUR);
+	fwrite(&firstFATblock, 2, 1, drive_fp);
+	fseek(drive_fp, 2, SEEK_CUR);
+	fwrite(&filesize, 2, 1, drive_fp);
+	fseek(drive_fp, 2, SEEK_CUR);
+	fwrite(&type, 1, 1, drive_fp);
 
 }
-
-/*End of pseudocode*/
