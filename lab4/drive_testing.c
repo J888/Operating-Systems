@@ -19,7 +19,7 @@ int write_metadata(int entrytype, int firstblock, char * filename, char * extens
 	fwrite(&date, 8, 1, fp);			//date modified
 	fwrite(&firstblock, 2, 1, fp); //first fat block		
 	fwrite(&filesize, 2, 1, fp);		//filesize
-	fwrite(&entryentrytype, 1, 1, fp);			//file entrytype
+	fwrite(&entrytype, 1, 1, fp);			//file entrytype
 	return 1;
 }
 
@@ -33,6 +33,7 @@ struct meta {
 	int firstblock;
 	int filesize;
 	int entrytype;
+
 } ;
 
 

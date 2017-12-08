@@ -29,14 +29,23 @@
 #define DATA_START_BLOCK 548
 #define DATA_END_BLOCK   9764
 
-#define FOLDER 0
-#define FILE 1
+#define PATH 0
 
 /*Function prototypes will go here */
 
 /* - GLOBALS -*/
 FILE * fp; //File stream to the “drive” file
 int drive_position = 0; //keeps track of position within the drive (when needed)
+
+struct meta {
+	char filename[8];
+	char extension[3];
+	long datecreated;
+	long datemodified;
+	int firstblock;
+	int filesize;
+	int entrytype;
+} MD;
 
 
 int main(int argc, char ** argv)
@@ -61,55 +70,49 @@ int format_drive()
 {
 	int z = 0x00;
 	seek_block_from_start(0);
-	fwrite(&z, BLOCKS_ON_DISK, BLOCK_SIZE_BYTES, fp);
+	for(int i = 0; i < BLOCKS_ON_DISK*512; i++)
+	{
+		fwrite(&z, 1, 1, fp);
+	}
 }
-
-
-
 
 
 
 
 /* PURPOSE: create a file or directory within the file system, if it doesn't exist already
 RETURNS: pointer to file descriptor. If it already exists, return -1 */
-int create_file(int type, int bytes, char* pathname, char* filename) 
+int create_file(int type, int bytes, char * path) 
 {
 
-	if( (type==FOLDER) && bytes!=NULL)
+	int e = exists(path);
+
+	if(e==-1)
 	{
-		fprintf(stderr, "If type is FOLDER, then bytes param should be NULL\n");
 		return -1;
 	}
 
-
-
-	rewind(fp) // point to start of FAT
-	drive_position = 0; //reset counter
-
-
-	int FATentry = FAT_next_empty(); // get next empty space in FAT 
-
-	//update the ROOT DIRECTORY, location of first block gets stored there (not in FAT)
-	update_rootdir(FATentry, type, path, filename, 1);
-
-	int blocks;
-	if(bytes <= 512) 
-	{	
-		blocks = 1;  // only need a block
-	}
-	else if(bytes%512!=0) 
-	{   // if size_in_bytes is non-multiple of 512, extra block needed
-		blocks = (bytes/512) + 1;
-	}
-	else
-	{ // otherwise it's a multiple, no extra needed
-		blocks = bytes/512;
-	}
-
-
-	if(type==FILE) // Link blocks in the FAT
+	else if(type==1) // CREATE FILE
 	{
+		rewind(fp) // go to FAT
+		drive_position = 0; //reset global counter
 
+		int FATentry = FAT_next_empty(); // get next empty space in FAT 
+
+		update_rootdir(FATentry, type, path, filename, 1);
+
+		int blocks;
+		if(bytes <= 512) 
+		{	
+			blocks = 1;  // only need a block
+		}
+		else if(bytes%512!=0) 
+		{   // if size_in_bytes is non-multiple of 512, extra block needed
+			blocks = (bytes/512) + 1;
+		}
+		else
+		{ // otherwise it's a multiple, no extra needed
+			blocks = bytes/512;
+		}
 
 		FILE * FAT_fp_prev;
 		int final = 0xFFFF; // indicates end of file
@@ -127,7 +130,6 @@ int create_file(int type, int bytes, char* pathname, char* filename)
 				FATentry = FAT_next_empty(); // find NEXT space, advances fp
 				if(FATentry==-1)
 				{ 
-					print error message
 					return -1;	
 				}
 				else
@@ -173,6 +175,133 @@ int delete_file(filename, path, first FAT block, etc.)
 
 
 }
+
+
+
+
+/* returns:
+	-1 for nothing found
+	 1 for path found
+	 2 for file found 	*/
+int exists(char * path){
+
+	//parse the path
+	char * tok;
+	tok = strtok(path, "/"); // first time, tok will be "root"
+	int RDblock = 0, FATblock = 0;
+	while( (tok!=NULL) && (RDblock!=-1) )
+	{
+		tok = strtok(NULL, "/");
+		block = search_entry(tok, RDblock);
+
+	} 
+
+	if(RDblock==-1) // NOT FOUND
+	{
+		return -1;
+	}
+
+	else if( (MD.filetype==0) && (block!=-1) )
+	{
+		return 1;
+	}
+
+	else if( (MD.filetype==1) && (block!=-1))
+	{
+		return 2;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+
+//searches a particular block in the RD for an entry by name (tok)
+int search_entry(char * tok, int RDblock)
+{
+	fseek(fp, ROOTDIR_FIRST_BLOCK, SEEK_SET);
+	fseek(fp, RDblock*512, SEEK_CUR);
+
+	get_metadata();
+	int counter = 0;
+	while(counter <= 512)
+	{
+		if(strcmp(MD.filename, tok)==0)
+		{
+			return MD.firstblock;
+		}
+		get_metadata();
+		counter+=32;
+	}
+
+	return -1;
+}
+
+
+int new_entry()
+{
+
+}
+
+
+/* PURPOSE: Creates a directory entry with metadata
+RETURNS: 1 on success, -1 on failure */
+int update_rootdir(int firstFATblock, int type, char * path , char * filename, char * extension, int option)
+{
+	seek_block_from_start(ROOTDIR_FIRST_BLOCK); // point to root directory start
+	
+	if(option == 1) //adding file
+	{
+		if(path!=NULL) 
+		{
+			//parse the path
+
+
+
+			navigate FILE stream to the correct RD entry;
+			write_metadata();
+		}
+		else // no path provided so this goes in root
+		{
+			Find the first free block in the Root Directory;
+			write_metadata(type, firstFATblock, filename, extension);
+		}
+		
+
+	}
+	else //removing file
+	{
+		Find the entry in the Root Directory;
+		set all bytes to 0;
+	}
+
+}
+
+
+
+/* PURPOSE: Writes the metadata bytes - Assumes that pointer is already at correct place */
+int write_metadata(int entrytype, int firstblock, char * filename, char * extension, int filesize)
+{
+	//get current date 
+	long date = (long)time(NULL);
+	printf("%s\n", ctime(&date) );
+
+	//write the metadata	
+	fwrite(filename, 8, 1, fp);      //filename	
+	fwrite(extension, 3, 1, fp); 	//extension			
+	fwrite(&date, 8, 1, fp);			//date created		
+	fwrite(&date, 8, 1, fp);			//date modified
+	fwrite(&firstblock, 2, 1, fp); //first fat block		
+	fwrite(&filesize, 2, 1, fp);		//filesize
+	fwrite(&entrytype, 1, 1, fp);			//file entrytype
+	return 1;
+}
+
+
+
+
+
 
 
 /* PURPOSE: open a file by finding its first block
@@ -260,114 +389,3 @@ int FAT_next_empty()
 	}
 }
 
-
-/* PURPOSE: Search for the file or subdirectory 
-	RETURNS: first FAT block of the file
-*/
-int search_rootdir(int type, char * path, char * filename){
-
-	if(path!=NULL && filename!=NULL) //searching for a file in path
-	{
-		//parse the path and break it up into parts;
-		char * tok;
-		tok = strtok(path, "/");
-		printf("%s\n", tok);
-		while(tok!=NULL)
-		{
-			tok = strtok(NULL, "/");
-			if(tok!=NULL) {
-				printf("%s\n", tok);
-			}
-		} 
-
-
-
-
-		find the entry for the deepest subdirectory in the path;
-		find the file within the entry;
-			if (nothing found)
-				return -1;
-		int firstFAT = corresponding metadata bytes;
-		return firstFAT;
-
-	}
-	else if(filename==NULL && path!=NULL) // searching for a path
-	{
-		//do the same but with just a path
-		if (nothing found)
-			return -1;
-		return 0;
-	}
-	else if(path==NULL && filename!=NULL) //searching for file in root
-	{	
-		// do the same but look for a file in the root
-		if (nothing found)
-			return -1;
-		return firstFAT;
-	}
-
-}
-
-
-
-/* PURPOSE: Creates a root directory entry with metadata
-RETURNS: 1 on success, -1 on failure */
-int update_rootdir(int firstFATblock, int type, char * path , char * filename, char * extension, int option)
-{
-	seek_block_from_start(ROOTDIR_FIRST_BLOCK); // point to root directory start
-	
-	if(option == 1) //adding file
-	{
-		if(path!=NULL) 
-		{
-			//parse the path
-
-
-
-			navigate FILE stream to the correct RD entry;
-			write_metadata();
-		}
-		else // no path provided so this goes in root
-		{
-			Find the first free block in the Root Directory;
-			write_metadata(type, firstFATblock, filename, extension);
-		}
-		
-
-	}
-	else //removing file
-	{
-		Find the entry in the Root Directory;
-		set all bytes to 0;
-	}
-
-}
-
-
-Char ** parse_path()
-
-
-/* PURPOSE: Writes the metadata bytes
-Assumes that pointer is already at correct place */
-int write_metadata(int type, int firstFATblock, char * filename, char * extension, int filesize)
-{
-
-	//get current date as long
-	long date = (long)time(NULL);
-
-	//write the metadata	
-	fwrite(filename, 8, 1, fp);      //filename
-	fseek(fp, 8, SEEK_CUR);   	
-	fwrite(extension, 3, 1, fp); 	//extension
-	fseek(fp, 3, SEEK_CUR); 			
-	fwrite(date, 8, 1, fp);			//date created
-	fseek(fp, 8, SEEK_CUR);			
-	fwrite(date, 8, 1, fp);			//date modified
-	fseek(fp, 8, SEEK_CUR);
-	fwrite(firstFATblock, 2, 1, fp); //first fat block
-	fseek(fp, 2, SEEK_CUR); 			
-	fwrite(filesize, 2, 1, fp);		//filesize
-	fseek(fp, 2, SEEK_CUR);
-	fwrite(type, 1, 1, fp);			//filetype
-
-}
