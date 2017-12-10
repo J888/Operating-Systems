@@ -1,4 +1,4 @@
-/* John Hyland - CIS 3207 - Project 4a - Pseudocode for File System Lab */
+/* John Hyland - CIS 3207 - Project 4 - FAT FILE SYSTEM */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,35 +32,76 @@
 #define PATH 0
 
 /*Function prototypes will go here */
+int format_drive();
+int create_file(int type, int bytes, char * path);
+int update_rootdir(int firstFAT, int type, char * filename, char * extension, int filesize, int option);
+int delete_file(char * path);
+int exists(char * path);
+int filename_parse(char * path);
+int entry_search(char * tok, int RDblock);
+void get_metadata();
+int write_metadata(int entrytype, int firstblock, char * filename, char * extension, int filesize);
+int write_data(char * data, char * path);
+char * read_data(char * path);
+int seek_block_from_start(int blocknum);
+int seek_block_from_current(int blocknum);
+int FAT_next_empty();
 
 /* - GLOBALS -*/
 FILE * fp; //File stream to the “drive” file
 int drive_position = 0; //keeps track of position within the drive (when needed)
 
-struct meta {
+struct meta_read {
 	char filename[8];
 	char extension[3];
 	long datecreated;
 	long datemodified;
-	int firstblock;
-	int filesize;
-	int entrytype;
+	int  firstblock;
+	int  filesize;
+	int  entrytype; // 1 for directory, 2 for file
+ 
+	int  entry_location[2]; 
 } MD;
 
 
+struct fileinfo {
+	char filename[8];
+	char extension[3];
+	int  filesize;
+} FI;
+
+
+int block_queue[65];
+
 int main(int argc, char ** argv)
 {
-	// //here's where I'll do all the file system testing
-	// format_drive();
-	// create_file(directory, NULL, "root/", "subdirectoryA")
-	// create_file(file, size, "root/subdirectoryA", "file1.txt");
+	fp = fopen("Drive5MB", "r+");
 
-	// char * data = some data;
+	int test = atoi(argv[1]);
+	char data[120] = "this is a test a b c d e f g h i j k l m n o p q r s t u v q x y z 1 2 3 4 5 6 7 8 9 10 ! @ # $ % ^ & * ( ) _ + ";
 
-	// write_to_file(data);
-	// close_file();
-	// open_file(filename, pathname, etc.);
-	// compare what is in file to data that was written;
+	if(test==1) // CREATE A DIRECTORY UNDER ROOT
+	{
+		format_drive();
+		create_file(1, 0, "root/folder1");
+		printf("Created directory under root\n");
+	}
+	else if(test==1) // CREATE A FILE WITHIN THAT DIRECTORY
+	{
+		create_file(2, 1000, "root/folder1/file1");
+		printf("Created directory under root\n");
+	}
+	else if(test==2) // WRITE DATA INTO THE FILE
+	{
+		write_data("this is a test", "root/folder1/file1");
+		printf("Created file\n");
+	}
+	else if(test==3)
+	{
+		printf("Here is the result of the read: %s\n", read_data("root/folder1/file1"));
+		printf("Reading data in file: \n");
+	}
+
 	
 }
 
@@ -74,9 +115,8 @@ int format_drive()
 	{
 		fwrite(&z, 1, 1, fp);
 	}
+	return 1;
 }
-
-
 
 
 /* PURPOSE: create a file or directory within the file system, if it doesn't exist already
@@ -86,19 +126,22 @@ int create_file(int type, int bytes, char * path)
 
 	int e = exists(path);
 
-	if(e==-1)
+	if(e > 0)
 	{
-		return -1;
+		return -1; // because it already exists
 	}
 
-	else if(type==1) // CREATE FILE
-	{
-		rewind(fp) // go to FAT
+	if(type==2) // CREATE FILE
+	{	
+
+		filename_parse(path); 
+		FI.filesize = bytes;
+
+		rewind(fp); // go to FAT
 		drive_position = 0; //reset global counter
+		int firstFAT = FAT_next_empty(); // get next empty space in FAT 
 
-		int FATentry = FAT_next_empty(); // get next empty space in FAT 
-
-		update_rootdir(FATentry, type, path, filename, 1);
+		update_rootdir(firstFAT, type, FI.filename, FI.extension, FI.filesize, 1);
 
 		int blocks;
 		if(bytes <= 512) 
@@ -114,36 +157,83 @@ int create_file(int type, int bytes, char * path)
 			blocks = bytes/512;
 		}
 
-		FILE * FAT_fp_prev;
-		int final = 0xFFFF; // indicates end of file
-		//link blocks in the FAT with a loop
+		FILE * prev;
+	
+		int final = 0xFFFF; 
+	
 		for (int i = 0; i < blocks; i++)
 		{
 			if(i == blocks-1)
 			{	
-				fwrite(&final, 2, 1, FAT_fp_prev); // last block, so insert 0xFFFF
+				fwrite(&final, 2, 1, prev); // last block, so insert 0xFFFF
 				break; // exit the loop
 			}
 			else
 			{
-				FAT_fp_prev = fp; // save PREVIOUS space
-				FATentry = FAT_next_empty(); // find NEXT space, advances fp
+				prev = fp; // save PREVIOUS space
+				int FATentry = FAT_next_empty(); // find NEXT space
 				if(FATentry==-1)
 				{ 
-					return -1;	
+					return -1;	// no space left in FAT
 				}
 				else
 				{
-					fwrite(&FATentry, 2, 1, FAT_fp_prev); //put NEXT block# in PREVIOUS space
+					fwrite(&FATentry, 2, 1, prev); //put NEXT block# in PREVIOUS free space
 				}
 
 			}
 		}
 	} 
 
+	else if(type==1) // CREATE DIRECTORY
+	{
+		update_rootdir(0, type, path, 0, 0, 1);
+	}
+
 	return 1;
 }
 
+
+
+/* Finds the right place for metadata entry
+   returns 1 on success, -1 on failure */
+int update_rootdir(int firstFAT, int type, char * filename, char * extension, int filesize, int option)
+{
+	seek_block_from_start(ROOTDIR_FIRST_BLOCK); // point to root directory start
+	
+	if(option == 1) //adding a new entry
+	{
+		fseek(fp, ROOTDIR_FIRST_BLOCK, SEEK_SET);
+		fseek(fp, MD.entry_location[0]*512, SEEK_CUR);
+		
+		//get next empty spot to put metadata
+		int err = 1;
+		for(int i = 0; i < 16; i++)
+		{
+			get_metadata();
+			if(MD.entrytype == 0) // if entrytype is 0 then metadata spot is free
+			{	
+				err = 0;
+				fseek(fp, -32, SEEK_CUR); //back up
+				write_metadata(type, firstFAT, filename, extension, filesize);
+				break;
+			}
+		}
+
+		if(err)
+		{
+			return -1;
+		}	
+
+		return 1;
+
+	}
+	else //removing an entry
+	{
+		return 1;
+	}
+
+}
 
 
 
@@ -152,31 +242,39 @@ int create_file(int type, int bytes, char * path)
 
 /* 	PURPOSE: deletes a file
 RETURNS: pointer to file descriptor. If it doesn't exist, return NULL */
-int delete_file(filename, path, first FAT block, etc.)
+int delete_file(char * path)
 {
-
-	int saveFirstFAT = search_rootdir(filename, path, etc);
-
-	update_rootdir(filename, pathname, etc., delete option); //remove root directory entry
-
-	fseek() first block of file in FAT//reset all the blocks' memory and delete from FAT Table
-	From there, fseek() saveFirstFAT;
-
-	int savedblock;
-
-	while(savedblock!=0xFFFF)
+	int e = exists(path);
+	if(e<0)
 	{
-		int savedblock = next FAT entry;
-		delete current entry by setting bytes to 0x00;
-		fseek() next FAT entry
+		return -1; //because file doesn't exist
 	}
 
-	fseek() to savedblock and delete the 0xFFFF;
+	update_rootdir(MD.firstblock, MD.entrytype, FI.filename, FI.extension, 0, 0);
 
+	
+	// zero all the FAT links
+	fseek(fp, MD.firstblock * 2, SEEK_SET);
+
+	FILE * prev;
+
+	int save;
+	int z = 0x0000;
+	fread(&save, 2, 1, fp);
+	fseek(fp, -2, SEEK_CUR);
+	fwrite(&z, 2, 1, fp);
+
+	while(save!=0xFFFF)
+	{
+		fseek(fp, save * 2, SEEK_SET);
+		fread(&save, 2, 1, fp);
+		fseek(fp, -2, SEEK_CUR);
+		fwrite(&z, 2, 1, fp);
+	}
+
+	return 1;
 
 }
-
-
 
 
 /* returns:
@@ -188,12 +286,14 @@ int exists(char * path){
 	//parse the path
 	char * tok;
 	tok = strtok(path, "/"); // first time, tok will be "root"
-	int RDblock = 0, FATblock = 0;
+	tok = strtok(NULL, "/"); 
+
+	int RDblock = 0;
 	while( (tok!=NULL) && (RDblock!=-1) )
 	{
+		MD.entry_location[0] = RDblock; // save the block that is being searched
+		RDblock = entry_search(tok, RDblock);
 		tok = strtok(NULL, "/");
-		block = search_entry(tok, RDblock);
-
 	} 
 
 	if(RDblock==-1) // NOT FOUND
@@ -201,13 +301,15 @@ int exists(char * path){
 		return -1;
 	}
 
-	else if( (MD.filetype==0) && (block!=-1) )
+	else if( (MD.entrytype==1) && (RDblock!=-1) )
 	{
+		MD.entry_location[0] = RDblock; // resave
 		return 1;
 	}
 
-	else if( (MD.filetype==1) && (block!=-1))
+	else if( (MD.entrytype==2) && (RDblock!=-1))
 	{
+		MD.entry_location[0] = RDblock; // resave
 		return 2;
 	}
 	else
@@ -217,66 +319,74 @@ int exists(char * path){
 }
 
 
+
+/* From the full path, get the filename and extension
+   put in global struct */
+int filename_parse(char * path)
+{
+    path = strdup(path);
+    char * tok1;
+    char * prev;
+    tok1 = strtok(path, "/");
+
+    while(tok1!=NULL)
+    {
+        prev = tok1;
+        tok1 =  strtok(NULL, "/");
+    }
+    
+    char * tok2;
+    
+    tok2 = strtok(prev, ".");
+    strcpy(FI.filename, tok2);
+    
+    tok2 = strtok(NULL, ".");
+    strcpy(FI.extension, tok2);
+    
+    return 1;
+}
+
+
 //searches a particular block in the RD for an entry by name (tok)
-int search_entry(char * tok, int RDblock)
+int entry_search(char * tok, int RDblock)
 {
 	fseek(fp, ROOTDIR_FIRST_BLOCK, SEEK_SET);
 	fseek(fp, RDblock*512, SEEK_CUR);
 
 	get_metadata();
 	int counter = 0;
-	while(counter <= 512)
+	while(counter < 16)
 	{
+		MD.entry_location[1] = counter; // save the metadata entry spot that's being search
 		if(strcmp(MD.filename, tok)==0)
 		{
 			return MD.firstblock;
 		}
 		get_metadata();
-		counter+=32;
+		counter++;
 	}
 
-	return -1;
+	return -1; // entry not found
 }
 
 
-int new_entry()
+
+//returns struct containing metadata
+void get_metadata()
 {
-
-}
-
-
-/* PURPOSE: Creates a directory entry with metadata
-RETURNS: 1 on success, -1 on failure */
-int update_rootdir(int firstFATblock, int type, char * path , char * filename, char * extension, int option)
-{
-	seek_block_from_start(ROOTDIR_FIRST_BLOCK); // point to root directory start
+	fread(&MD.filename, 11, 1, fp);
 	
-	if(option == 1) //adding file
-	{
-		if(path!=NULL) 
-		{
-			//parse the path
+	fread(&MD.datecreated, 8, 1, fp);
 
+	fread(&MD.datemodified, 8, 1, fp);
 
+	fread(&MD.firstblock, 2, 1, fp);
 
-			navigate FILE stream to the correct RD entry;
-			write_metadata();
-		}
-		else // no path provided so this goes in root
-		{
-			Find the first free block in the Root Directory;
-			write_metadata(type, firstFATblock, filename, extension);
-		}
-		
+	fread(&MD.filesize, 2, 1, fp);
 
-	}
-	else //removing file
-	{
-		Find the entry in the Root Directory;
-		set all bytes to 0;
-	}
-
+	fread(&MD.entrytype, 2, 1, fp);
 }
+
 
 
 
@@ -287,9 +397,19 @@ int write_metadata(int entrytype, int firstblock, char * filename, char * extens
 	long date = (long)time(NULL);
 	printf("%s\n", ctime(&date) );
 
-	//write the metadata	
-	fwrite(filename, 8, 1, fp);      //filename	
-	fwrite(extension, 3, 1, fp); 	//extension			
+
+	fwrite(filename, 8, 1, fp);   	
+	
+
+	if(extension!=NULL)
+	{
+		fwrite(extension, 3, 1, fp); 
+	}
+	else
+	{
+		fseek(fp, 8, SEEK_CUR);
+	}
+
 	fwrite(&date, 8, 1, fp);			//date created		
 	fwrite(&date, 8, 1, fp);			//date modified
 	fwrite(&firstblock, 2, 1, fp); //first fat block		
@@ -299,43 +419,106 @@ int write_metadata(int entrytype, int firstblock, char * filename, char * extens
 }
 
 
-
-
-
-
-
 /* PURPOSE: open a file by finding its first block
 RETURNS: pointer to the location. If it doesn't exist, return -1 */
-int open_file(filename, pathname, etc.) 
+int open_file(filename, pathname) 
 {
-	if (search_rootdir(filename, etc.)==-1) //verify the file exists
-	{
-		print error message;
-		return -1;
-	}
-
-	return search_rootdir(filename, pathname, etc.)
-
+	
+	return 1;
 }
 
 /* resets the FILE stream
 RETURNS: 1 on success, -1 on fail*/
 int close_file()
 {	
-	set fp FILE stream pointer back to the beginning of the drive
-	by doing a call to fseek();
+	return 1;
 }
 
 
-/* PURPOSE: writes data to file
-RETURNS: 1 on success, -1 on failure*/
-int write_to_file(filename, path, etc., char * data)
+/* Write data into the data section, using the FAT as a map*/
+int write_data(char * data, char * path)
 {
-	int FATblock = search_rootdir(filename, path, etc);
+	int e = exists(path);
 
-	fseek() to FAT;
-	fseek() to the start block, keeping track of where in FAT;
-		write_data(blocknumber); // write data into DATA section
+	if (e!=2) // then a (the) file was not found
+	{
+		return -1;
+	}
+
+	for(int i = 0; i < 70; i++)
+	{
+		block_queue[i] = -2;
+	}
+
+	fseek(fp, MD.firstblock * 2, SEEK_SET);
+	int j = 1;
+	while(block_queue[j]!=0xFFFF)
+	{
+		fread(&block_queue[j], 2, 1, fp);
+		fseek(fp, block_queue[j] * 2, SEEK_SET);
+		j++;
+	}
+
+	//write the data into the data section
+	int k = 0;
+	while(block_queue[k] != -2) // -2 means end of file in the queue
+	{
+		fseek(fp, (DATA_START_BLOCK * 512) + (512 * block_queue[k]), SEEK_SET);
+		for(int u = 0; u < 512; u++)
+		{
+			fwrite(&data[u+(512*k)], 1, 1, fp);   // queue[current character + (offset of how many blocks we've already written)]
+			u++;
+		}
+
+		k++;
+	}
+
+	return 1;
+}
+
+
+char * read_data(char * path)
+{
+	int e = exists(path);
+
+	if (e!=2) // then a (the) file was not found
+	{
+		return "error";
+	}
+
+	for(int i = 0; i < 70; i++)
+	{
+		block_queue[i] = -2;
+	}
+
+	fseek(fp, MD.firstblock * 2, SEEK_SET);
+	int j = 1;
+	while(block_queue[j]!=0xFFFF)
+	{
+		fread(&block_queue[j], 2, 1, fp);
+		fseek(fp, block_queue[j] * 2, SEEK_SET);
+		j++;
+	}
+
+	//read data from the data section
+	int k = 0;
+
+	char * dataread = malloc(sizeof(char) * MAX_FILE_SIZE_BYTES); 
+
+	while(block_queue[k] != -2) // -2 means end of file in the queue
+	{
+		fseek(fp, (DATA_START_BLOCK * 512) + (512 * block_queue[k]), SEEK_SET);
+		for(int u = 0; u < 512; u++)
+		{
+			fread(&dataread[u+(512*k)], 1, 1, fp);   // queue[current character + (offset of how many blocks we've already written)]
+			u++;
+		}
+
+		k++;
+	}
+
+	return dataread;
+
 }
 
 
@@ -351,7 +534,7 @@ int seek_block_from_start(int blocknum)
 //wrapper function for fseek that goes to block# blocknum from current position of FILE stream ptr
 int seek_block_from_current(int blocknum)
 {
-	if(blocknum > NUM_BLOCKS_ON_DISK-1 )
+	if(blocknum > BLOCKS_ON_DISK-1 )
 	{
 		return -1;
 	}
@@ -374,9 +557,9 @@ int FAT_next_empty()
 	while( (x!=0x0000) && !(drive_position>=FAT_BLOCK_COUNT*512) ) // will stop if empty found or end of the FAT reached
 	{	
 		drive_position+=2; //keep track of where we are in FAT (in BYTES)
-		fseek(fp, 2, SEEK_CUR); // point fp 2 bytes ahead
 		fread(&x, 2, 1, fp); // read 2 bytes
 	}
+
 	if(x == 0x0000)
 	{
 		//then a space was found, return the space byte number in the FAT
